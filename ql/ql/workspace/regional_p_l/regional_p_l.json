@@ -17,7 +17,7 @@
    "label": "Hierarchical Sales Trajectory"
   }
  ],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"Executive Financial Highlights\",\"level\":4}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Net Sales (NSV)\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Direct COGS\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Contribution Margin\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Contribution Margin %\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Regional Net Profit\"}},{\"type\":\"header\",\"data\":{\"text\":\"Regional Analytics & Cost Breakdowns\",\"level\":4}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Sales Performance by Geography (SM Node)\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Regional P&L Cost Stack\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Product Revenue & Margin Breakdown\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Hierarchical Sales Trajectory\",\"col\":6}},{\"type\":\"header\",\"data\":{\"text\":\"Reports & Masters\",\"level\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"Executive Financial Highlights\",\"level\":4}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Net Sales (NSV)\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Contribution Margin\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Contribution Margin %\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Manufacturing Overhead\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Regional Sales Cost\"}},{\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Regional Net Profit\"}},{\"type\":\"header\",\"data\":{\"text\":\"Regional Analytics & Cost Breakdowns\",\"level\":4}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Sales Performance by Geography (SM Node)\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Regional P&L Cost Stack\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Product Revenue & Margin Breakdown\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Hierarchical Sales Trajectory\",\"col\":6}},{\"type\":\"header\",\"data\":{\"text\":\"Reports & Masters\",\"level\":4}}]",
  "creation": "2026-10-22 13:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -53,7 +53,27 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Manufacturing Cost (Period COGS)",
+   "label": "Manufacturing Overhead (BOP)",
+   "link_count": 0,
+   "link_to": "Manufacturing Overhead",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sales Operational Cost (SOC)",
+   "link_count": 0,
+   "link_to": "Sales Operational Cost",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Manufacturing Cost Rates",
    "link_count": 0,
    "link_to": "Manufacturing Cost",
    "link_type": "DocType",
@@ -71,7 +91,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-22 13:00:00.000000",
+ "modified": "2026-10-26 16:30:00.000000",
  "modified_by": "Administrator",
  "module": "QL",
  "name": "Regional P&L",
@@ -81,16 +101,20 @@
    "number_card_name": "Total Net Sales (NSV)"
   },
   {
-   "label": "Total Direct COGS",
-   "number_card_name": "Total Direct COGS"
-  },
-  {
    "label": "Total Contribution Margin",
    "number_card_name": "Total Contribution Margin"
   },
   {
    "label": "Contribution Margin %",
    "number_card_name": "Contribution Margin %"
+  },
+  {
+   "label": "Total Manufacturing Overhead",
+   "number_card_name": "Total Manufacturing Overhead"
+  },
+  {
+   "label": "Total Regional Sales Cost",
+   "number_card_name": "Total Regional Sales Cost"
   },
   {
    "label": "Regional Net Profit",
@@ -122,10 +146,18 @@
   },
   {
    "color": "#8b5cf6",
-   "doc_view": "Tree",
-   "icon": "users",
-   "label": "Sales Person Tree",
-   "link_to": "Sales Person",
+   "doc_view": "List",
+   "icon": "settings",
+   "label": "Manufacturing Overhead (BOP)",
+   "link_to": "Manufacturing Overhead",
+   "type": "DocType"
+  },
+  {
+   "color": "#ec4899",
+   "doc_view": "List",
+   "icon": "dollar-sign",
+   "label": "Sales Operational Cost (SOC)",
+   "link_to": "Sales Operational Cost",
    "type": "DocType"
   },
   {
@@ -138,10 +170,10 @@
   },
   {
    "color": "#06b6d4",
-   "doc_view": "List",
-   "icon": "shopping-cart",
-   "label": "Sales Invoices / Orders",
-   "link_to": "Sales",
+   "doc_view": "Tree",
+   "icon": "users",
+   "label": "Sales Person Tree",
+   "link_to": "Sales Person",
    "type": "DocType"
   }
  ],

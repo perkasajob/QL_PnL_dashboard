@@ -1,0 +1,384 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 0,
+ "autoname": "format:MOH-{YYYY}-{MM}",
+ "creation": "2026-10-26 16:30:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "period_date",
+  "amended_from",
+  "sec_variable_moh",
+  "biaya_kerusakan_bahan",
+  "biaya_analisa",
+  "jasa_pengujian_analisa",
+  "col_var_moh_1",
+  "biaya_pengolahan_limbah",
+  "biaya_impor",
+  "biaya_ekspedisi",
+  "sec_fixed_moh",
+  "biaya_pegawai_tak_langsung",
+  "biaya_keamanan",
+  "biaya_rumah_tangga",
+  "biaya_pabrik_lainnya",
+  "biaya_penyusutan_bangunan",
+  "biaya_penyusutan_mesin",
+  "biaya_penyusutan_inventaris_kantor",
+  "biaya_perlengkapan_dan_atk",
+  "biaya_fotocopy_dan_cetakan",
+  "biaya_listrik_dan_air",
+  "biaya_asuransi",
+  "col_fixed_moh_1",
+  "biaya_perjalanan_dinas",
+  "biaya_entertainment",
+  "biaya_training",
+  "biaya_pemeliharaan_bangunan_mesin_inventaris",
+  "biaya_pemeliharaan_kendaraan",
+  "jasa_pemeliharaan_bangunan_mesin_inventaris",
+  "jasa_pemeliharaan_kendaraan",
+  "biaya_rnd",
+  "biaya_sewa_tabung_peralatan",
+  "biaya_sewa_kendaraan",
+  "sec_totals",
+  "total_variable_moh",
+  "col_totals_1",
+  "total_fixed_moh",
+  "col_totals_2",
+  "total"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Perusahaan",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Periode Bulan (01-MM-YYYY)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Manufacturing Overhead",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_variable_moh",
+   "fieldtype": "Section Break",
+   "label": "Biaya Overhead Pabrik Variabel & Semi-Variabel"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_kerusakan_bahan",
+   "fieldtype": "Currency",
+   "label": "Biaya Kerusakan Bahan Baku, Pembantu, Kemasan, Barang Jadi",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_analisa",
+   "fieldtype": "Currency",
+   "label": "Biaya Analisa",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "jasa_pengujian_analisa",
+   "fieldtype": "Currency",
+   "label": "Jasa Pengujian (Analisa)",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "col_var_moh_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pengolahan_limbah",
+   "fieldtype": "Currency",
+   "label": "Biaya Pengolahan Limbah",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_impor",
+   "fieldtype": "Currency",
+   "label": "Biaya Impor",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_ekspedisi",
+   "fieldtype": "Currency",
+   "label": "Biaya Ekspedisi",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "sec_fixed_moh",
+   "fieldtype": "Section Break",
+   "label": "Biaya Overhead Pabrik Tetap / Fixed Factory Overhead"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pegawai_tak_langsung",
+   "fieldtype": "Currency",
+   "label": "Biaya Pegawai Tak Langsung",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_keamanan",
+   "fieldtype": "Currency",
+   "label": "Biaya Keamanan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_rumah_tangga",
+   "fieldtype": "Currency",
+   "label": "Biaya Rumah Tangga",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pabrik_lainnya",
+   "fieldtype": "Currency",
+   "label": "Biaya Pabrik Lainnya",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_penyusutan_bangunan",
+   "fieldtype": "Currency",
+   "label": "Biaya Penyusutan Bangunan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_penyusutan_mesin",
+   "fieldtype": "Currency",
+   "label": "Biaya Penyusutan Mesin",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_penyusutan_inventaris_kantor",
+   "fieldtype": "Currency",
+   "label": "Biaya Penyusutan Inventaris Kantor",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_perlengkapan_dan_atk",
+   "fieldtype": "Currency",
+   "label": "Biaya Perlengkapan dan ATK",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_fotocopy_dan_cetakan",
+   "fieldtype": "Currency",
+   "label": "Biaya Fotocopy dan Cetakan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_listrik_dan_air",
+   "fieldtype": "Currency",
+   "label": "Biaya Listrik dan Air",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_asuransi",
+   "fieldtype": "Currency",
+   "label": "Biaya Asuransi",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "col_fixed_moh_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_perjalanan_dinas",
+   "fieldtype": "Currency",
+   "label": "Biaya Perjalanan Dinas",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_entertainment",
+   "fieldtype": "Currency",
+   "label": "Biaya Entertainment",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_training",
+   "fieldtype": "Currency",
+   "label": "Biaya Training",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pemeliharaan_bangunan_mesin_inventaris",
+   "fieldtype": "Currency",
+   "label": "Biaya Pemeliharaan dan Perbaikan Bangunan, Mesin, Inventaris kantor",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pemeliharaan_kendaraan",
+   "fieldtype": "Currency",
+   "label": "Biaya Pemeliharaan dan Perbaikan Kendaraan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "jasa_pemeliharaan_bangunan_mesin_inventaris",
+   "fieldtype": "Currency",
+   "label": "Jasa Pemeliharaan dan Perbaikan Bangunan, Mesin, Inventaris kantor",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "jasa_pemeliharaan_kendaraan",
+   "fieldtype": "Currency",
+   "label": "Jasa Pemeliharaan dan Perbaikan Kendaraan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_rnd",
+   "fieldtype": "Currency",
+   "label": "Biaya R & D",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_sewa_tabung_peralatan",
+   "fieldtype": "Currency",
+   "label": "Biaya Sewa Tabung, Peralatan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_sewa_kendaraan",
+   "fieldtype": "Currency",
+   "label": "Biaya Sewa Kendaraan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "sec_totals",
+   "fieldtype": "Section Break",
+   "label": "Ringkasan Total"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_variable_moh",
+   "fieldtype": "Currency",
+   "label": "Sub-Total Overhead Variabel",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_totals_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_fixed_moh",
+   "fieldtype": "Currency",
+   "label": "Sub-Total Overhead Tetap (Fixed)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_totals_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-26 16:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Manufacturing Overhead",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 0,
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "period_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "company",
+ "track_changes": 1
+}

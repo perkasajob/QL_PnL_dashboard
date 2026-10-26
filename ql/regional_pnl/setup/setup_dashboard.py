@@ -68,12 +68,13 @@ def setup_reports_in_db():
 
 def setup_number_cards():
 	"""
-	Creates the 5 core executive financial metric Number Cards:
+	Creates the 6 core executive financial metric Number Cards:
 	1. Total Net Sales (NSV)
-	2. Total Direct COGS
-	3. Total Contribution Margin
-	4. Contribution Margin %
-	5. Regional Net Profit
+	2. Total Contribution Margin
+	3. Contribution Margin %
+	4. Total Manufacturing Overhead
+	5. Total Regional Sales Cost
+	6. Regional Net Profit
 	"""
 	number_cards = [
 		{
@@ -82,16 +83,6 @@ def setup_number_cards():
 			"type": "Custom",
 			"method": "ql.regional_pnl.api.get_total_nsv",
 			"color": "#2563eb",
-			"is_public": 1,
-			"show_percentage_stats": 1,
-			"stats_time_interval": "Monthly"
-		},
-		{
-			"name": "Total Direct COGS",
-			"label": "Total Direct COGS",
-			"type": "Custom",
-			"method": "ql.regional_pnl.api.get_total_direct_cogs",
-			"color": "#ef4444",
 			"is_public": 1,
 			"show_percentage_stats": 1,
 			"stats_time_interval": "Monthly"
@@ -117,11 +108,31 @@ def setup_number_cards():
 			"stats_time_interval": "Monthly"
 		},
 		{
+			"name": "Total Manufacturing Overhead",
+			"label": "Total Manufacturing Overhead",
+			"type": "Custom",
+			"method": "ql.regional_pnl.api.get_total_manufacturing_overhead",
+			"color": "#8b5cf6",
+			"is_public": 1,
+			"show_percentage_stats": 1,
+			"stats_time_interval": "Monthly"
+		},
+		{
+			"name": "Total Regional Sales Cost",
+			"label": "Total Regional Sales Cost",
+			"type": "Custom",
+			"method": "ql.regional_pnl.api.get_total_sales_operational_cost",
+			"color": "#ec4899",
+			"is_public": 1,
+			"show_percentage_stats": 1,
+			"stats_time_interval": "Monthly"
+		},
+		{
 			"name": "Regional Net Profit",
 			"label": "Regional Net Profit",
 			"type": "Custom",
 			"method": "ql.regional_pnl.api.get_total_net_profit",
-			"color": "#6366f1",
+			"color": "#06b6d4",
 			"is_public": 1,
 			"show_percentage_stats": 1,
 			"stats_time_interval": "Monthly"
@@ -148,6 +159,7 @@ def setup_number_cards():
 			print(f"Created Number Card: {card_name}")
 		else:
 			frappe.db.set_value("Number Card", card_name, {
+				"label": card["label"],
 				"type": card["type"],
 				"method": card["method"],
 				"color": card["color"],
@@ -205,7 +217,7 @@ def setup_dashboard_charts():
 			"timeseries": 0,
 			"custom_options": json.dumps({
 				"barOptions": {"stacked": True},
-				"colors": ["#ef4444", "#f97316", "#eab308", "#64748b", "#10b981"]
+				"colors": ["#ef4444", "#8b5cf6", "#f97316", "#eab308", "#10b981"]
 			})
 		},
 		{
@@ -283,15 +295,16 @@ def setup_workspace(card_names, chart_names):
 	Constructs the rich Workspace 'Regional P&L & Contribution Margin'.
 	Embeds Number Cards, Analytical Charts, and Quick Launchers.
 	"""
-	ws_name = "Regional P&L & Contribution Margin"
+	ws_name = "Regional P&L"
 	ws_label = "Regional P&L & Contribution Margin"
 
 	content = [
 		{"type": "header", "data": {"text": "Executive Financial Highlights", "level": 4}},
 		{"type": "number_card", "data": {"number_card_name": "Total Net Sales (NSV)"}},
-		{"type": "number_card", "data": {"number_card_name": "Total Direct COGS"}},
 		{"type": "number_card", "data": {"number_card_name": "Total Contribution Margin"}},
 		{"type": "number_card", "data": {"number_card_name": "Contribution Margin %"}},
+		{"type": "number_card", "data": {"number_card_name": "Total Manufacturing Overhead"}},
+		{"type": "number_card", "data": {"number_card_name": "Total Regional Sales Cost"}},
 		{"type": "number_card", "data": {"number_card_name": "Regional Net Profit"}},
 		{"type": "header", "data": {"text": "Regional Analytics & Cost Breakdowns", "level": 4}},
 		{"type": "chart", "data": {"chart_name": "Sales Performance by Geography (SM Node)", "col": 6}},
@@ -317,18 +330,18 @@ def setup_workspace(card_names, chart_names):
 			"icon": "git-commit"
 		},
 		{
-			"type": "Page",
-			"link_to": "insights",
-			"label": "Frappe Insights (BI)",
-			"color": "#6366f1",
-			"icon": "pie-chart"
+			"type": "DocType",
+			"link_to": "Manufacturing Overhead",
+			"label": "Manufacturing Overhead (BOP)",
+			"color": "#8b5cf6",
+			"icon": "settings"
 		},
 		{
 			"type": "DocType",
-			"link_to": "Sales Person",
-			"label": "Sales Person Tree",
-			"color": "#8b5cf6",
-			"icon": "users"
+			"link_to": "Sales Operational Cost",
+			"label": "Sales Operational Cost (SOC)",
+			"color": "#ec4899",
+			"icon": "dollar-sign"
 		},
 		{
 			"type": "DocType",
@@ -339,10 +352,10 @@ def setup_workspace(card_names, chart_names):
 		},
 		{
 			"type": "DocType",
-			"link_to": "Sales Invoice",
-			"label": "Sales Invoices",
+			"link_to": "Sales Person",
+			"label": "Sales Person Tree",
 			"color": "#06b6d4",
-			"icon": "shopping-cart"
+			"icon": "users"
 		}
 	]
 
@@ -367,16 +380,23 @@ def setup_workspace(card_names, chart_names):
 			"onboard": 1
 		},
 		{
+			"label": "Dedicated Monthly Cost Inputs",
+			"type": "Card Break",
+			"icon": "database"
+		},
+		{
 			"type": "Link",
-			"link_type": "Page",
-			"link_to": "insights",
-			"label": "Frappe Insights (BI Dashboards & Workbooks)",
+			"link_type": "DocType",
+			"link_to": "Manufacturing Overhead",
+			"label": "Manufacturing Overhead (Factory BOP)",
 			"onboard": 1
 		},
 		{
-			"label": "Costing & Master Data",
-			"type": "Card Break",
-			"icon": "database"
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Sales Operational Cost",
+			"label": "Sales Operational Cost (Marketing OPEX)",
+			"onboard": 1
 		},
 		{
 			"type": "Link",
@@ -394,23 +414,28 @@ def setup_workspace(card_names, chart_names):
 		}
 	]
 
-	if not frappe.db.exists("Workspace", ws_name):
+	target_ws = "Regional P&L" if frappe.db.exists("Workspace", "Regional P&L") else ws_name
+
+	if not frappe.db.exists("Workspace", target_ws):
 		doc = frappe.get_doc({
 			"doctype": "Workspace",
-			"name": ws_name,
+			"name": target_ws,
 			"label": ws_label,
 			"title": ws_label,
+			"type": "Workspace",
 			"icon": "chart-line",
 			"module": "QL",
 			"public": 1,
 			"is_hidden": 0,
 			"content": json.dumps(content)
 		})
+		doc.flags.ignore_mandatory = True
 		doc.insert(ignore_permissions=True)
 	else:
-		doc = frappe.get_doc("Workspace", ws_name)
+		doc = frappe.get_doc("Workspace", target_ws)
 		doc.label = ws_label
 		doc.title = ws_label
+		doc.type = "Workspace"
 		doc.icon = "chart-line"
 		doc.public = 1
 		doc.module = "QL"
@@ -452,9 +477,10 @@ def setup_workspace(card_names, chart_names):
 		})
 
 	doc.flags.ignore_links = True
+	doc.flags.ignore_mandatory = True
 	doc.flags.ignore_permissions = True
 	doc.save(ignore_permissions=True)
-	print(f"Created/Updated Workspace: {ws_name}")
+	print(f"Created/Updated Workspace: {target_ws}")
 
 
 if __name__ == "__main__":

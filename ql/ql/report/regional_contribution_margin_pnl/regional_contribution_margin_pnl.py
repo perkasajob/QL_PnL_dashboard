@@ -11,7 +11,7 @@ from ql.tools.ql_tools import extract_sales_team_data
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	validate_filters(filters)
-	
+
 	columns = get_columns(filters)
 	data = get_data(filters)
 	chart = get_chart(data, filters)
@@ -40,13 +40,13 @@ def validate_filters(filters):
 def get_column_mapping():
 	"""Dynamically inspects tabSales Item columns."""
 	existing_cols = {c[0] for c in frappe.db.sql("DESC `tabSales Item`")}
-	
+
 	item_col = "item_code" if "item_code" in existing_cols else "custom_item"
 	name_col = "item_name" if "item_name" in existing_cols else "custom_item_name"
 	qty_col = "qty" if "qty" in existing_cols else "custom_quantity"
 	amount_col = "amount" if "amount" in existing_cols else "custom_amount"
 	hna_col = "custom_hna" if "custom_hna" in existing_cols else None
-	
+
 	if "GSV" in existing_cols:
 		gsv_col = "GSV"
 	elif "custom_gsv" in existing_cols:
@@ -65,14 +65,15 @@ def parse_sales_field(raw_text, default_tier):
 		terr = item.get("territory") or item.get("sales_person_name") or f"{default_tier}_OTHER"
 		name = item.get("sales_person_name") or terr
 		tier = item.get("tier") or default_tier
-		return terr.strip(), name.strip(), tier.strip()
-	return f"{default_tier}_OTHER", f"Other {default_tier}", default_tier
+		sp_id = item.get("sales_person_id") or ""
+		return terr.strip(), name.strip(), tier.strip(), sp_id.strip()
+	return f"{default_tier}_OTHER", f"Other {default_tier}", default_tier, ""
 
 
 def get_sales_person_tree():
-	"""Legacy stub for backwards compatibility."""
+	"""Legacy stub returning tabSales Person nodes."""
 	return frappe.db.sql("""
-		SELECT name, sales_person_name, parent_sales_person, custom_jabatan, custom_area, is_group, lft, rgt
+		SELECT name, sales_person_name, parent_sales_person, is_group, lft, rgt
 		FROM `tabSales Person`
 		WHERE enabled = 1
 		ORDER BY lft ASC
@@ -89,7 +90,6 @@ def calculate_depth_map(sales_person_nodes):
 
 
 def get_tier_label(name_or_depth, is_group=0, parent=None):
-	"""Returns tier label for node."""
 	clean = str(name_or_depth or "").strip().upper()
 	if clean in ("GSM", "SM", "DM", "MR", "SPV"):
 		return clean
@@ -97,92 +97,29 @@ def get_tier_label(name_or_depth, is_group=0, parent=None):
 
 
 def get_direct_sales_data(filters):
-	"""Legacy stub returning empty dict."""
 	return {}
 
 
 def get_gl_expenses_data(filters, node_codes):
-	"""Fetches GL expenses matching active tree nodes or shared corporate overhead."""
-	company_condition = ""
-	params = {
-		"from_date": filters.get("from_date"),
-		"to_date": filters.get("to_date")
-	}
-	if filters.get("company"):
-		company_condition = "AND gle.company = %(company)s"
-		params["company"] = filters.get("company")
-
-	gl_entries = frappe.db.sql(f"""
-		SELECT 
-			gle.account,
-			acc.account_name,
-			gle.cost_center,
-			gle.party,
-			(gle.debit - gle.credit) as net_expense
-		FROM `tabGL Entry` gle
-		JOIN `tabAccount` acc ON acc.name = gle.account
-		WHERE gle.posting_date BETWEEN %(from_date)s AND %(to_date)s
-			AND gle.is_cancelled = 0
-			AND gle.docstatus = 1
-			AND acc.root_type = 'Expense'
-			{company_condition}
-	""", params, as_dict=True)
-
-	node_variable_opex = {}
-	node_fixed_operating = {}
-	node_employee_costs = {}
-	total_shared_overhead = 0.0
-
-	for entry in gl_entries:
-		net_amount = flt(entry.net_expense)
-		if net_amount == 0.0:
-			continue
-
-		acc_text = f"{entry.account} {entry.account_name or ''}".lower()
-		cost_center_text = (entry.cost_center or "").lower()
-
-		target_node = None
-		if entry.cost_center and entry.cost_center in node_codes:
-			target_node = entry.cost_center
-		elif entry.party and entry.party in node_codes:
-			target_node = entry.party
-		else:
-			for code in node_codes:
-				if code.lower() in cost_center_text:
-					target_node = code
-					break
-
-		if any(k in acc_text for k in ["logistik", "bbm", "tol", "parkir", "ekspedisi", "freight", "delivery", "shipping", "transport", "komisi", "commission"]):
-			if target_node:
-				node_variable_opex[target_node] = node_variable_opex.get(target_node, 0.0) + net_amount
-			else:
-				total_shared_overhead += net_amount
-		elif any(k in acc_text for k in ["sewa gudang", "rent", "listrik", "air", "telepon", "internet", "utilities", "pemeliharaan", "maintenance", "depresiasi"]):
-			if target_node:
-				node_fixed_operating[target_node] = node_fixed_operating.get(target_node, 0.0) + net_amount
-			else:
-				total_shared_overhead += net_amount
-		elif any(k in acc_text for k in ["gaji", "salary", "salaries", "upah", "tunjangan", "benefit", "bpjs", "thr", "payroll"]):
-			if target_node:
-				node_employee_costs[target_node] = node_employee_costs.get(target_node, 0.0) + net_amount
-			else:
-				total_shared_overhead += net_amount
-		else:
-			total_shared_overhead += net_amount
-
+	"""Stub kept for backward-compatibility with external callers.
+	All expenses are now derived from Manufacturing Overhead & Sales Operational Cost."""
 	return {
-		"node_variable_opex": node_variable_opex,
-		"node_fixed_operating": node_fixed_operating,
-		"node_employee_costs": node_employee_costs,
-		"total_shared_overhead": total_shared_overhead
+		"node_variable_opex": {},
+		"node_fixed_operating": {},
+		"node_employee_costs": {},
+		"total_shared_overhead": 0.0
 	}
 
 
 def get_data(filters):
 	"""
 	Builds dynamic hierarchical P&L tree based strictly on tabSales:
-	GSM (custom_gsm) -> SM (custom_sm) -> DM (custom_dm) -> MR (custom_mr).
-	Uses extract_sales_team_data(raw_text) to parse codes, person names, and tiers.
+	GSM -> SM -> DM -> MR.
+	Derives:
+	- Revenue from tabSales / tabSales Item
+	- Direct Variable COGS from tabManufacturing Cost Fact / tabManufacturing Cost
+	- Variable & Fixed Factory MOH from tabManufacturing Overhead (allocated proportionally)
+	- Regional Variable Sales Costs, Salaries & Fixed OPEX from tabSales Operational Cost (rolled up via hierarchy)
 	"""
 	from_date = filters.get("from_date")
 	to_date = filters.get("to_date")
@@ -190,6 +127,12 @@ def get_data(filters):
 	target_tier = filters.get("hierarchy_level", "All")
 	docstatus_mode = filters.get("docstatus_filter", "All (0 & 1)")
 	docstatus_sql = "AND docstatus = 1" if docstatus_mode == "Submitted Only (1)" else "AND docstatus IN (0, 1)"
+
+	company_filter = ""
+	params = {"from_date": from_date, "to_date": to_date}
+	if filters.get("company"):
+		company_filter = "AND (company = %(company)s OR company IS NULL OR company = '')"
+		params["company"] = filters.get("company")
 
 	item_col, name_col, qty_col, amount_col, gsv_col, hna_col = get_column_mapping()
 	hna_select = f", COALESCE(si.{hna_col}, 0.0) as unit_hna" if hna_col else ", 0.0 as unit_hna"
@@ -201,6 +144,7 @@ def get_data(filters):
 			custom_customers_purchase_order_date as po_date,
 			COALESCE(custom_gsv, 0.0) as gsv,
 			COALESCE(custom_nsv1, 0.0) as nsv,
+			custom_sales_person,
 			custom_gsm,
 			custom_sm,
 			custom_dm,
@@ -208,7 +152,7 @@ def get_data(filters):
 		FROM `tabSales`
 		WHERE custom_customers_purchase_order_date BETWEEN %(from_date)s AND %(to_date)s
 		  {docstatus_sql}
-	""", {"from_date": from_date, "to_date": to_date}, as_dict=True)
+	""", params, as_dict=True)
 
 	if not sales_headers:
 		return []
@@ -234,15 +178,16 @@ def get_data(filters):
 				item_map[it.parent] = []
 			item_map[it.parent].append(it)
 
-	# 3. Load Manufacturing Costs for in-memory lookup
-	mcf_records = frappe.db.sql("""
+	# 3. Load Manufacturing Costs Fact / Standard Rates
+	mcf_table = "tabManufacturing Cost Fact" if frappe.db.table_exists("Manufacturing Cost Fact") else "tabManufacturing Cost"
+	mcf_records = frappe.db.sql(f"""
 		SELECT 
-			COALESCE(product_id, item_code) as item_code,
+			COALESCE(item_code, '') as item_code,
 			period_start_date,
 			period_end_date,
 			COALESCE(variable_cogs_per_piece, 0.0) as var_cogs,
 			COALESCE(statutory_valuation_rate, 0.0) as stat_cogs
-		FROM `tabManufacturing Cost`
+		FROM `{mcf_table}`
 	""", as_dict=True)
 
 	cost_lookup = {}
@@ -269,15 +214,17 @@ def get_data(filters):
 		header_gsv = flt(s.gsv)
 		header_nsv = flt(s.nsv)
 
-		gsm_t, gsm_n, gsm_tier = parse_sales_field(s.custom_gsm, "GSM")
-		sm_t, sm_n, sm_tier = parse_sales_field(s.custom_sm, "SM")
-		dm_t, dm_n, dm_tier = parse_sales_field(s.custom_dm, "DM")
-		mr_t, mr_n, mr_tier = parse_sales_field(s.custom_mr, "MR")
+		gsm_t, gsm_n, gsm_tier, _ = parse_sales_field(s.custom_gsm, "GSM")
+		sm_t, sm_n, sm_tier, _ = parse_sales_field(s.custom_sm, "SM")
+		dm_t, dm_n, dm_tier, _ = parse_sales_field(s.custom_dm, "DM")
+		mr_t, mr_n, mr_tier, _ = parse_sales_field(s.custom_mr, "MR")
 
 		k_gsm = gsm_t
 		k_sm = f"{gsm_t} / {sm_t}"
 		k_dm = f"{gsm_t} / {sm_t} / {dm_t}"
 		k_mr = f"{gsm_t} / {sm_t} / {dm_t} / {mr_t}"
+
+		sp_link = (s.custom_sales_person or "").strip()
 
 		for k, p, t, ind, is_grp, c, nm in [
 			(k_gsm, None, "GSM", 0, 1, gsm_t, f"{gsm_t} - {gsm_n}"),
@@ -287,10 +234,23 @@ def get_data(filters):
 		]:
 			if k not in nodes:
 				nodes[k] = {
-					"key": k, "parent": p, "tier": t, "indent": ind, "is_group": is_grp,
-					"code": c, "name": nm, "gsv": 0.0, "nsv": 0.0, "cogs": 0.0,
-					"var_opex": 0.0, "fixed_op": 0.0, "emp_costs": 0.0
+					"key": k,
+					"parent": p,
+					"tier": t,
+					"indent": ind,
+					"is_group": is_grp,
+					"code": c,
+					"name": nm,
+					"sp_links": set(),
+					"gsv": 0.0,
+					"nsv": 0.0,
+					"cogs": 0.0,
+					"var_sales_cost": 0.0,
+					"employee_salaries": 0.0,
+					"fixed_operating_costs": 0.0,
 				}
+			if sp_link:
+				nodes[k]["sp_links"].add(sp_link)
 
 		# Compute Line Item Costs & GSV
 		order_items = item_map.get(s.name, [])
@@ -324,22 +284,120 @@ def get_data(filters):
 			nodes[k]["nsv"] += order_nsv
 			nodes[k]["cogs"] += order_cogs
 
-	# 5. Fetch GL Expenses & Overhead
-	all_node_codes = {n["code"] for n in nodes.values()}
-	gl_data = get_gl_expenses_data(filters, all_node_codes)
+	# 5. Fetch & Aggregate Manufacturing Overhead (Company-wide)
+	moh_condition = ""
+	moh_params = {"from_date": from_date, "to_date": to_date}
+	if filters.get("company"):
+		moh_condition = "AND company = %(company)s"
+		moh_params["company"] = filters.get("company")
 
-	for k, n in nodes.items():
-		code = n["code"]
-		n["var_opex"] += gl_data["node_variable_opex"].get(code, 0.0)
-		n["fixed_op"] += gl_data["node_fixed_operating"].get(code, 0.0)
-		n["emp_costs"] += gl_data["node_employee_costs"].get(code, 0.0)
+	moh_records = frappe.db.sql(f"""
+		SELECT 
+			COALESCE(total_variable_moh, 0.0) as var_moh,
+			COALESCE(total_fixed_moh, 0.0) as fixed_moh,
+			COALESCE(total, 0.0) as total_moh
+		FROM `tabManufacturing Overhead`
+		WHERE period_date BETWEEN %(from_date)s AND %(to_date)s
+		  AND docstatus = 1
+		  {moh_condition}
+	""", moh_params, as_dict=True)
 
-	total_overhead = gl_data["total_shared_overhead"]
+	total_company_var_moh = sum(flt(r.var_moh) for r in moh_records)
+	total_company_fixed_moh = sum(flt(r.fixed_moh) for r in moh_records)
+
+	# 6. Fetch & Roll Up Sales Operational Cost records
+	soc_condition = ""
+	soc_params = {"from_date": from_date, "to_date": to_date}
+	if filters.get("company"):
+		soc_condition = "AND company = %(company)s"
+		soc_params["company"] = filters.get("company")
+
+	soc_records = frappe.db.sql(f"""
+		SELECT 
+			territory,
+			sales_person,
+			COALESCE(total_variable_sales_cost, 0.0) as var_sales,
+			COALESCE(biaya_gaji, 0.0) as salary,
+			COALESCE(total_fixed_operating_cost, 0.0) as fixed_op,
+			COALESCE(total, 0.0) as total_cost
+		FROM `tabSales Operational Cost`
+		WHERE period_date BETWEEN %(from_date)s AND %(to_date)s
+		  AND docstatus = 1
+		  {soc_condition}
+	""", soc_params, as_dict=True)
+
+	# Load NestedSet mapping from tabSales Person for hierarchy resolution
+	sp_tree_records = frappe.db.sql("""
+		SELECT name, lft, rgt, is_group, parent_sales_person
+		FROM `tabSales Person`
+	""", as_dict=True)
+	sp_meta = {r.name: r for r in sp_tree_records}
+
+	# Map SOC entries to tree nodes
+	for soc in soc_records:
+		sp_name = (soc.sales_person or "").strip()
+		terr = (soc.territory or "").strip()
+		var_cost = flt(soc.var_sales)
+		salary = flt(soc.salary)
+		fixed_op = flt(soc.fixed_op)
+
+		matched_keys = set()
+
+		# Match by sales_person link
+		if sp_name:
+			for k, n in nodes.items():
+				if sp_name in n["sp_links"] or sp_name == n["code"]:
+					matched_keys.add(k)
+
+		# Match by territory
+		if terr and not matched_keys:
+			clean_terr = terr.upper()
+			for k, n in nodes.items():
+				if clean_terr == n["code"].upper() or clean_terr in n["name"].upper():
+					matched_keys.add(k)
+
+		# NestedSet ancestor/descendant matching via tabSales Person
+		if not matched_keys and sp_name in sp_meta:
+			target_sp = sp_meta[sp_name]
+			for k, n in nodes.items():
+				for lnk in n["sp_links"]:
+					if lnk in sp_meta:
+						lnk_sp = sp_meta[lnk]
+						# If lnk is inside target_sp subtree
+						if target_sp.lft <= lnk_sp.lft and target_sp.rgt >= lnk_sp.rgt:
+							matched_keys.add(k)
+
+		# If matched, apply and roll up to ancestors
+		if matched_keys:
+			# If multiple leaf nodes matched, divide cost evenly among deepest matching tier nodes
+			max_indent = max(nodes[k]["indent"] for k in matched_keys)
+			target_nodes = [k for k in matched_keys if nodes[k]["indent"] == max_indent]
+			split_factor = len(target_nodes)
+
+			for tk in target_nodes:
+				curr = tk
+				while curr:
+					nodes[curr]["var_sales_cost"] += (var_cost / split_factor)
+					nodes[curr]["employee_salaries"] += (salary / split_factor)
+					nodes[curr]["fixed_operating_costs"] += (fixed_op / split_factor)
+					curr = nodes[curr]["parent"]
+		else:
+			# Unassigned regional expenses distributed across root GSM nodes
+			gsm_nodes = [k for k, v in nodes.items() if v["tier"] == "GSM"]
+			if not gsm_nodes:
+				gsm_nodes = list(nodes.keys())
+			split_factor = len(gsm_nodes) if gsm_nodes else 1
+			for gk in gsm_nodes:
+				nodes[gk]["var_sales_cost"] += (var_cost / split_factor)
+				nodes[gk]["employee_salaries"] += (salary / split_factor)
+				nodes[gk]["fixed_operating_costs"] += (fixed_op / split_factor)
+
+	# 7. Total Root Revenue for Manufacturing Overhead Proportion Allocation
 	root_revenue = sum(v["nsv"] for v in nodes.values() if v["tier"] == "GSM")
 	if root_revenue <= 0.0:
 		root_revenue = max((v["nsv"] for v in nodes.values()), default=0.0)
 
-	# 6. Hierarchical sort: GSM -> SM -> DM -> MR
+	# 8. Hierarchical sorting: GSM -> SM -> DM -> MR
 	sorted_keys = []
 	for gsm_k in sorted(k for k, v in nodes.items() if v["tier"] == "GSM"):
 		sorted_keys.append(gsm_k)
@@ -359,17 +417,28 @@ def get_data(filters):
 		gross_rev = flt(n["nsv"])
 		direct_cogs = flt(n["cogs"])
 		mfg_margin = flt(gross_rev - direct_cogs)
-		var_opex = flt(n["var_opex"])
-		contrib_margin = flt(mfg_margin - var_opex)
+
+		# Proportionate allocation of Manufacturing Overhead
+		rev_share = (gross_rev / root_revenue) if root_revenue > 0 else 0.0
+		alloc_var_moh = flt(total_company_var_moh * rev_share)
+		alloc_fixed_moh = flt(total_company_fixed_moh * rev_share)
+
+		reg_var_sales = flt(n["var_sales_cost"])
+		reg_salary = flt(n["employee_salaries"])
+		reg_fixed_op = flt(n["fixed_operating_costs"])
+
+		# Waterfall Contribution Margin:
+		# Gross Revenue - (Direct Variable COGS + Allocated Variable MOH + Regional Variable Sales Costs)
+		contrib_margin = flt(gross_rev - (direct_cogs + alloc_var_moh + reg_var_sales))
 		cm_pct = flt((contrib_margin / gross_rev * 100) if gross_rev > 0 else 0.0)
 
-		fixed_op = flt(n["fixed_op"])
-		emp_costs = flt(n["emp_costs"])
-		overhead_allocated = flt((gross_rev / root_revenue * total_overhead) if root_revenue > 0 else 0.0)
-		total_period_fixed = flt(fixed_op + emp_costs + overhead_allocated)
-
-		net_profit = flt(contrib_margin - total_period_fixed)
+		# Waterfall Net Profit:
+		# Contribution Margin - (Regional Salaries + Regional Fixed Operating + Allocated Fixed Factory Overhead)
+		net_profit = flt(contrib_margin - (reg_salary + reg_fixed_op + alloc_fixed_moh))
 		net_profit_pct = flt((net_profit / gross_rev * 100) if gross_rev > 0 else 0.0)
+
+		# Backward-compatible fields
+		total_var_opex = flt(alloc_var_moh + reg_var_sales)
 
 		result_rows.append({
 			"sales_person": n["key"],
@@ -383,12 +452,17 @@ def get_data(filters):
 			"gross_revenue": flt(gross_rev, 2),
 			"direct_cogs": flt(direct_cogs, 2),
 			"manufacturing_margin": flt(mfg_margin, 2),
-			"variable_opex": flt(var_opex, 2),
+			"allocated_variable_moh": flt(alloc_var_moh, 2),
+			"regional_variable_sales_cost": flt(reg_var_sales, 2),
+			"variable_opex": flt(total_var_opex, 2),
 			"contribution_margin": flt(contrib_margin, 2),
 			"contribution_margin_pct": flt(cm_pct, 2),
-			"fixed_operating_costs": flt(fixed_op, 2),
-			"employee_costs": flt(emp_costs, 2),
-			"overhead_costs": flt(overhead_allocated, 2),
+			"regional_employee_salaries": flt(reg_salary, 2),
+			"regional_fixed_operating_costs": flt(reg_fixed_op, 2),
+			"allocated_fixed_moh": flt(alloc_fixed_moh, 2),
+			"employee_costs": flt(reg_salary, 2),
+			"fixed_operating_costs": flt(reg_fixed_op, 2),
+			"overhead_costs": flt(alloc_fixed_moh, 2),
 			"net_profit": flt(net_profit, 2),
 			"net_profit_pct": flt(net_profit_pct, 2)
 		})
@@ -425,25 +499,25 @@ def get_columns(filters):
 			"width": 150
 		},
 		{
-			"label": _("Direct COGS"),
+			"label": _("Direct Variable COGS"),
 			"fieldname": "direct_cogs",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
-			"width": 130
+			"width": 140
 		},
 		{
-			"label": _("Manufacturing Margin"),
-			"fieldname": "manufacturing_margin",
+			"label": _("Allocated Variable MOH"),
+			"fieldname": "allocated_variable_moh",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
 			"width": 150
 		},
 		{
-			"label": _("Variable OPEX"),
-			"fieldname": "variable_opex",
+			"label": _("Regional Variable Sales Costs"),
+			"fieldname": "regional_variable_sales_cost",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
-			"width": 130
+			"width": 160
 		},
 		{
 			"label": _("Contribution Margin"),
@@ -459,25 +533,25 @@ def get_columns(filters):
 			"width": 90
 		},
 		{
-			"label": _("Fixed Operating Costs"),
-			"fieldname": "fixed_operating_costs",
+			"label": _("Regional Employee Salaries"),
+			"fieldname": "regional_employee_salaries",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
-			"width": 140
+			"width": 160
 		},
 		{
-			"label": _("Employee Costs"),
-			"fieldname": "employee_costs",
+			"label": _("Regional Fixed Operating Costs"),
+			"fieldname": "regional_fixed_operating_costs",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
-			"width": 130
+			"width": 160
 		},
 		{
-			"label": _("Overhead Costs"),
-			"fieldname": "overhead_costs",
+			"label": _("Allocated Fixed MOH"),
+			"fieldname": "allocated_fixed_moh",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
-			"width": 140
+			"width": 150
 		},
 		{
 			"label": _("Net Profit"),
@@ -544,7 +618,7 @@ def get_report_summary(data, filters):
 		},
 		{
 			"value": tot_cogs,
-			"label": _("Total Direct COGS"),
+			"label": _("Total Direct Variable COGS"),
 			"datatype": "Currency",
 			"currency": currency
 		},
@@ -579,31 +653,29 @@ def get_financial_insights_html(data, filters):
 	if not root_rows:
 		root_rows = data
 
-	tot_gsv = sum(r.get("gsv", 0.0) for r in root_rows)
 	tot_nsv = sum(r.get("gross_revenue", 0.0) for r in root_rows)
 	tot_cogs = sum(r.get("direct_cogs", 0.0) for r in root_rows)
-	tot_mfg_margin = sum(r.get("manufacturing_margin", 0.0) for r in root_rows)
-	tot_var_opex = sum(r.get("variable_opex", 0.0) for r in root_rows)
+	tot_var_moh = sum(r.get("allocated_variable_moh", 0.0) for r in root_rows)
+	tot_var_sales = sum(r.get("regional_variable_sales_cost", 0.0) for r in root_rows)
 	tot_cm = sum(r.get("contribution_margin", 0.0) for r in root_rows)
-	tot_fixed_op = sum(r.get("fixed_operating_costs", 0.0) for r in root_rows)
-	tot_employee = sum(r.get("employee_costs", 0.0) for r in root_rows)
-	tot_overhead = sum(r.get("overhead_costs", 0.0) for r in root_rows)
+	tot_salaries = sum(r.get("regional_employee_salaries", 0.0) for r in root_rows)
+	tot_fixed_op = sum(r.get("regional_fixed_operating_costs", 0.0) for r in root_rows)
+	tot_fixed_moh = sum(r.get("allocated_fixed_moh", 0.0) for r in root_rows)
 	tot_net_profit = sum(r.get("net_profit", 0.0) for r in root_rows)
 
 	cm_pct = flt((tot_cm / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
 	cogs_pct = flt((tot_cogs / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
-	var_opex_pct = flt((tot_var_opex / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
+	var_moh_pct = flt((tot_var_moh / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
+	var_sales_pct = flt((tot_var_sales / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
 	net_profit_pct = flt((tot_net_profit / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
-	fixed_burden_pct = flt(((tot_fixed_op + tot_employee + tot_overhead) / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
+	fixed_burden_pct = flt(((tot_salaries + tot_fixed_op + tot_fixed_moh) / tot_nsv * 100) if tot_nsv > 0 else 0.0, 1)
 
-	# Identify top regional contributor (SM or DM with highest CM)
 	sm_or_dm_rows = [r for r in data if r.get("tier") in ("SM", "DM") and r.get("contribution_margin", 0) > 0]
 	if not sm_or_dm_rows:
 		sm_or_dm_rows = [r for r in data if r.get("contribution_margin", 0) > 0]
 
 	top_contributor = max(sm_or_dm_rows, key=lambda x: x.get("contribution_margin", 0.0)) if sm_or_dm_rows else None
 
-	# Identify territory with lowest CM % or margin dilution
 	potential_risks = [r for r in data if r.get("tier") in ("SM", "DM") and r.get("gross_revenue", 0) > 0]
 	if not potential_risks:
 		potential_risks = [r for r in data if r.get("gross_revenue", 0) > 0]
@@ -619,19 +691,18 @@ def get_financial_insights_html(data, filters):
 			return f"{v / 1_000_000:,.2f} M"
 		return f"{v:,.0f}"
 
-	# Dynamic narrative commentary
 	observations = []
 	if cm_pct >= 85:
 		observations.append(f"<strong>Exceptional Commercial Margin:</strong> Contribution Margin stands at <strong>{cm_pct}%</strong> ({currency} {fmt_money(tot_cm)}), reflecting disciplined pricing and low variable cost leakage.")
 	elif cm_pct >= 60:
 		observations.append(f"<strong>Stable Contribution Margin:</strong> Margin performance is healthy at <strong>{cm_pct}%</strong> ({currency} {fmt_money(tot_cm)}). Direct COGS consumes {cogs_pct}% of net revenue.")
 	else:
-		observations.append(f"<strong>Margin Dilution Alert:</strong> Contribution Margin is at <strong>{cm_pct}%</strong>, below target thresholds. Recommend auditing regional trade discounts and transport rates.")
+		observations.append(f"<strong>Margin Dilution Alert:</strong> Contribution Margin is at <strong>{cm_pct}%</strong>, below target thresholds. Recommend auditing variable sales costs and factory overhead.")
 
 	if net_profit_pct > 0:
-		observations.append(f"<strong>Positive Bottom Line:</strong> Regional operations generated net profit of <strong>{currency} {fmt_money(tot_net_profit)}</strong> ({net_profit_pct}% conversion), adequately covering all local fixed and shared overheads.")
+		observations.append(f"<strong>Positive Bottom Line:</strong> Regional operations generated net profit of <strong>{currency} {fmt_money(tot_net_profit)}</strong> ({net_profit_pct}% conversion), adequately covering all local fixed and shared factory overheads.")
 	else:
-		observations.append(f"<strong>Operational Deficit:</strong> Net Profit is currently in deficit (<strong>{currency} {fmt_money(tot_net_profit)}</strong>), driven by fixed cost and corporate overhead burden ({fixed_burden_pct}% of NSV).")
+		observations.append(f"<strong>Operational Deficit:</strong> Net Profit is currently in deficit (<strong>{currency} {fmt_money(tot_net_profit)}</strong>), driven by fixed cost and MOH burden ({fixed_burden_pct}% of NSV).")
 
 	top_card_html = ""
 	if top_contributor:
@@ -672,8 +743,9 @@ def get_financial_insights_html(data, filters):
 		</div>
 		<div style="font-size: 12px; color: #334155; display: flex; flex-direction: column; gap: 3px;">
 			<div>Direct COGS: <strong>{cogs_pct}%</strong> of NSV</div>
-			<div>Variable OPEX: <strong>{var_opex_pct}%</strong> of NSV</div>
-			<div>Fixed Overhead: <strong>{fixed_burden_pct}%</strong> of NSV</div>
+			<div>Allocated Var MOH: <strong>{var_moh_pct}%</strong> of NSV</div>
+			<div>Var Sales Costs: <strong>{var_sales_pct}%</strong> of NSV</div>
+			<div>Fixed Regional & MOH: <strong>{fixed_burden_pct}%</strong> of NSV</div>
 		</div>
 	</div>
 	"""

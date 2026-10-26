@@ -1,7 +1,7 @@
 // Copyright (c) 2026, QL and contributors
 // License: MIT. See LICENSE
 
-frappe.query_reports["Sales Person Pivot Tree Report"] = {
+frappe.query_reports["Sales Person Pivot Tree"] = {
 	tree: true,
 	name_field: "sales_person",
 	parent_field: "parent_sales_person",
@@ -75,9 +75,18 @@ frappe.query_reports["Sales Person Pivot Tree Report"] = {
 
 		if (!data) return value;
 
-		// 1. Rightmost Accumulated Sales Column Highlight
+		// 1. Rightmost Anchored Columns Highlighting
 		if (column.fieldname === "accumulated_sales") {
-			value = `<span style="font-weight: 700; background-color: #f8f9fa; color: #1e293b; display: inline-block; width: 100%; padding: 2px 6px; border-left: 2px solid #cbd5e1; border-radius: 2px;">${value}</span>`;
+			value = `<span style="font-weight: 700; background-color: #f8fafc; color: #1e293b; display: inline-block; width: 100%; padding: 2px 6px; border-left: 2px solid #cbd5e1; border-radius: 2px;">${value}</span>`;
+			return value;
+		}
+
+		if (column.fieldname === "accumulated_cm") {
+			var cm_val = flt(data.accumulated_cm);
+			var color = cm_val < 0 ? "#dc2626" : "#16a34a";
+			var bg = cm_val < 0 ? "#fef2f2" : "#f0fdf4";
+			var border = cm_val < 0 ? "#fca5a5" : "#86efac";
+			value = `<span style="font-weight: 700; background-color: ${bg}; color: ${color}; display: inline-block; width: 100%; padding: 2px 6px; border-left: 2px solid ${border}; border-radius: 2px;">${value}</span>`;
 			return value;
 		}
 

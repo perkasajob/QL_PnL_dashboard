@@ -1,0 +1,18 @@
+{
+ "creation": "2026-10-26 16:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Total Regional Sales Cost",
+ "method": "ql.regional_pnl.api.get_total_sales_operational_cost",
+ "modified": "2026-10-26 16:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Total Regional Sales Cost",
+ "owner": "Administrator",
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Monthly",
+ "type": "Custom"
+}

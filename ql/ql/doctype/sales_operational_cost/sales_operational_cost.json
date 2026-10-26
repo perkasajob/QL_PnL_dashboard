@@ -1,0 +1,332 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 0,
+ "autoname": "format:SOC-{territory}-{YYYY}-{MM}",
+ "creation": "2026-10-26 16:30:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "period_date",
+  "territory",
+  "sales_person",
+  "amended_from",
+  "sec_variable_sales",
+  "biaya_komisi_penjualan",
+  "biaya_pendistribusian_produk",
+  "biaya_ekspedisi",
+  "sec_fixed_sales",
+  "biaya_gaji",
+  "biaya_rumah_tangga",
+  "biaya_perjalanan_dinas",
+  "biaya_entertainment",
+  "biaya_perlengkapan_dan_atk",
+  "biaya_fotocopy_dan_cetakan",
+  "col_fixed_sales_1",
+  "biaya_listrik_dan_air",
+  "biaya_pemeliharaan_kendaraan",
+  "jasa_pemeliharaan_kendaraan",
+  "biaya_telepon_dan_internet",
+  "biaya_penyusutan_kendaraan",
+  "biaya_penyusutan_inventaris_kantor",
+  "sec_totals",
+  "total_variable_sales_cost",
+  "col_totals_1",
+  "total_employee_cost",
+  "col_totals_2",
+  "total_fixed_operating_cost",
+  "col_totals_3",
+  "total"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Perusahaan",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Periode Bulan (01-MM-YYYY)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "territory",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Territory",
+   "options": "Territory",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Sales Person / Area Node (GSM/SM/DM/MR)",
+   "options": "Sales Person",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Sales Operational Cost",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_variable_sales",
+   "fieldtype": "Section Break",
+   "label": "Biaya Operasional & Penjualan Variabel"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_komisi_penjualan",
+   "fieldtype": "Currency",
+   "label": "Biaya Komisi Penjualan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pendistribusian_produk",
+   "fieldtype": "Currency",
+   "label": "Biaya Pendistribusian Produk",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_ekspedisi",
+   "fieldtype": "Currency",
+   "label": "Biaya Ekspedisi",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "sec_fixed_sales",
+   "fieldtype": "Section Break",
+   "label": "Biaya Karyawan & Operasional Tetap / Fixed Regional Costs"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_gaji",
+   "fieldtype": "Currency",
+   "label": "Biaya Gaji",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_rumah_tangga",
+   "fieldtype": "Currency",
+   "label": "Biaya Rumah Tangga",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_perjalanan_dinas",
+   "fieldtype": "Currency",
+   "label": "Biaya Perjalanan Dinas",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_entertainment",
+   "fieldtype": "Currency",
+   "label": "Biaya Entertainment",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_perlengkapan_dan_atk",
+   "fieldtype": "Currency",
+   "label": "Biaya Perlengkapan dan ATK",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_fotocopy_dan_cetakan",
+   "fieldtype": "Currency",
+   "label": "Biaya Fotocopy dan Cetakan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "col_fixed_sales_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_listrik_dan_air",
+   "fieldtype": "Currency",
+   "label": "Biaya Listrik dan Air",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_pemeliharaan_kendaraan",
+   "fieldtype": "Currency",
+   "label": "Biaya Pemeliharaan dan Perbaikan Kendaraan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "jasa_pemeliharaan_kendaraan",
+   "fieldtype": "Currency",
+   "label": "Jasa Pemeliharaan dan Perbaikan Kendaraan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_telepon_dan_internet",
+   "fieldtype": "Currency",
+   "label": "Biaya Telepon dan Internet",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_penyusutan_kendaraan",
+   "fieldtype": "Currency",
+   "label": "Biaya Penyusutan Kendaraan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "biaya_penyusutan_inventaris_kantor",
+   "fieldtype": "Currency",
+   "label": "Biaya Penyusutan Inventaris Kantor",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "sec_totals",
+   "fieldtype": "Section Break",
+   "label": "Ringkasan Total"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_variable_sales_cost",
+   "fieldtype": "Currency",
+   "label": "Sub-Total Biaya Variabel Sales",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_totals_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_employee_cost",
+   "fieldtype": "Currency",
+   "label": "Sub-Total Biaya Karyawan (Gaji + Komisi)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_totals_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_fixed_operating_cost",
+   "fieldtype": "Currency",
+   "label": "Sub-Total Biaya Operasional Tetap (Non-Gaji)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_totals_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-26 16:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Sales Operational Cost",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Marketing Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Master Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 0,
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Marketing User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "period_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "territory",
+ "track_changes": 1
+}

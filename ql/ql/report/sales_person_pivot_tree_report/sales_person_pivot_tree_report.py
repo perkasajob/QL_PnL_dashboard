@@ -14,7 +14,7 @@ def execute(filters=None):
 	validate_filters(filters)
 
 	dynamic_columns, pivot_keys = build_pivot_columns(filters)
-	columns = get_base_columns(filters) + dynamic_columns + [get_accumulated_column(filters)]
+	columns = get_base_columns(filters) + dynamic_columns + get_anchored_columns(filters)
 	data = get_data(filters, dynamic_columns, pivot_keys)
 	chart = get_chart(data, dynamic_columns, filters)
 	report_summary = get_report_summary(data, columns, filters)
@@ -43,17 +43,14 @@ def validate_filters(filters):
 
 
 def get_sales_person_tree():
-	"""Legacy stub for backwards compatibility."""
 	return []
 
 
 def calculate_depth_map(tree_nodes):
-	"""Legacy stub for backwards compatibility."""
 	return {}
 
 
 def get_tier_label(name_or_depth, is_group=0, parent=None):
-	"""Returns tier label."""
 	clean = str(name_or_depth or "").strip().upper()
 	if clean in ("GSM", "SM", "DM", "MR"):
 		return clean
@@ -61,14 +58,13 @@ def get_tier_label(name_or_depth, is_group=0, parent=None):
 
 
 def get_column_mapping():
-	"""Schema detection for tabSales Item."""
 	existing_cols = {c[0] for c in frappe.db.sql("DESC `tabSales Item`")}
 	item_col = "item_code" if "item_code" in existing_cols else "custom_item"
 	name_col = "item_name" if "item_name" in existing_cols else "custom_item_name"
 	qty_col = "qty" if "qty" in existing_cols else "custom_quantity"
 	amount_col = "amount" if "amount" in existing_cols else "custom_amount"
 	hna_col = "custom_hna" if "custom_hna" in existing_cols else None
-	
+
 	if "GSV" in existing_cols:
 		gsv_col = "GSV"
 	elif "custom_gsv" in existing_cols:
@@ -80,7 +76,6 @@ def get_column_mapping():
 
 
 def parse_sales_field(raw_text, default_tier):
-	"""Extracts territory, person name, and tier using extract_sales_team_data."""
 	extracted = extract_sales_team_data(raw_text)
 	if extracted:
 		item = extracted[0]
@@ -150,9 +145,8 @@ def build_pivot_columns(filters):
 				curr_year += 1
 
 	else:
-		# Item Group / Product
 		item_col, name_col, qty_col, amount_col, gsv_col, _hna_col = get_column_mapping()
-		
+
 		sold_items = frappe.db.sql(f"""
 			SELECT 
 				si.{item_col} as item_code,
@@ -223,20 +217,33 @@ def get_base_columns(filters):
 	]
 
 
-def get_accumulated_column(filters):
-	return {
-		"label": _("Accumulated Sales (Total)"),
-		"fieldname": "accumulated_sales",
-		"fieldtype": "Currency",
-		"options": "Company:company:default_currency",
-		"width": 170
-	}
+def get_anchored_columns(filters):
+	"""Anchored columns on the far right: Accumulated Sales and Accumulated Contribution Margin."""
+	return [
+		{
+			"label": _("Accumulated Sales (Total)"),
+			"fieldname": "accumulated_sales",
+			"fieldtype": "Currency",
+			"options": "Company:company:default_currency",
+			"width": 170
+		},
+		{
+			"label": _("Accumulated Contribution Margin"),
+			"fieldname": "accumulated_cm",
+			"fieldtype": "Currency",
+			"options": "Company:company:default_currency",
+			"width": 190
+		}
+	]
 
 
 def get_data(filters, dynamic_columns, pivot_keys):
 	"""
 	Generates multi-period/item pivot matrix grouped hierarchically:
 	GSM -> SM -> DM -> MR strictly from tabSales records.
+	Anchors:
+	- accumulated_sales: Total NSV revenue
+	- accumulated_cm: Total Contribution Margin (NSV - Direct COGS - Allocated Var MOH - Reg Var Sales Costs)
 	"""
 	item_col, name_col, qty_col, amount_col, gsv_col, hna_col = get_column_mapping()
 	val_field_choice = filters.get("value_field", "NSV")
@@ -246,6 +253,15 @@ def get_data(filters, dynamic_columns, pivot_keys):
 	docstatus_mode = filters.get("docstatus_filter", "All (0 & 1)")
 	docstatus_sql = "AND docstatus = 1" if docstatus_mode == "Submitted Only (1)" else "AND docstatus IN (0, 1)"
 
+	company_filter = ""
+	params = {
+		"from_date": filters.get("from_date"),
+		"to_date": filters.get("to_date")
+	}
+	if filters.get("company"):
+		company_filter = "AND (company = %(company)s OR company IS NULL OR company = '')"
+		params["company"] = filters.get("company")
+
 	# 1. Fetch Sales Headers from tabSales
 	sales_headers = frappe.db.sql(f"""
 		SELECT 
@@ -253,6 +269,7 @@ def get_data(filters, dynamic_columns, pivot_keys):
 			custom_customers_purchase_order_date as po_date,
 			COALESCE(custom_gsv, 0.0) as gsv,
 			COALESCE(custom_nsv1, 0.0) as nsv,
+			custom_sales_person,
 			custom_gsm,
 			custom_sm,
 			custom_dm,
@@ -260,55 +277,50 @@ def get_data(filters, dynamic_columns, pivot_keys):
 		FROM `tabSales`
 		WHERE custom_customers_purchase_order_date BETWEEN %(from_date)s AND %(to_date)s
 		  {docstatus_sql}
-	""", {
-		"from_date": filters.get("from_date"),
-		"to_date": filters.get("to_date")
-	}, as_dict=True)
+	""", params, as_dict=True)
 
 	if not sales_headers:
 		return []
 
-	# Check if we need line items (for GSV, Item Amount, Contribution Margin, or Product pivot)
-	need_items = (val_field_choice != "NSV") or (pivot_by == "Item Group / Product")
+	# Load Line Items
 	item_map = {}
 	cost_lookup = {}
+	sales_names = [s.name for s in sales_headers]
+	batch_size = 1000
+	hna_select = f", COALESCE(si.{hna_col}, 0.0) as unit_hna" if hna_col else ", 0.0 as unit_hna"
 
-	if need_items:
-		sales_names = [s.name for s in sales_headers]
-		batch_size = 1000
-		hna_select = f", COALESCE(si.{hna_col}, 0.0) as unit_hna" if hna_col else ", 0.0 as unit_hna"
+	for i in range(0, len(sales_names), batch_size):
+		batch = sales_names[i:i + batch_size]
+		items = frappe.db.sql(f"""
+			SELECT 
+				parent,
+				si.{item_col} as item_code,
+				COALESCE(si.{qty_col}, 1.0) as qty,
+				COALESCE(si.{amount_col}, 0.0) as amount
+				{hna_select}
+			FROM `tabSales Item` si
+			WHERE parent IN %(batch)s
+		""", {"batch": batch}, as_dict=True)
+		for it in items:
+			if it.parent not in item_map:
+				item_map[it.parent] = []
+			item_map[it.parent].append(it)
 
-		for i in range(0, len(sales_names), batch_size):
-			batch = sales_names[i:i + batch_size]
-			items = frappe.db.sql(f"""
-				SELECT 
-					parent,
-					si.{item_col} as item_code,
-					COALESCE(si.{qty_col}, 1.0) as qty,
-					COALESCE(si.{amount_col}, 0.0) as amount
-					{hna_select}
-				FROM `tabSales Item` si
-				WHERE parent IN %(batch)s
-			""", {"batch": batch}, as_dict=True)
-			for it in items:
-				if it.parent not in item_map:
-					item_map[it.parent] = []
-				item_map[it.parent].append(it)
-
-		if val_field_choice == "Contribution Margin":
-			mcf_records = frappe.db.sql("""
-				SELECT 
-					COALESCE(product_id, item_code) as item_code,
-					period_start_date,
-					period_end_date,
-					COALESCE(variable_cogs_per_piece, 0.0) as var_cogs
-				FROM `tabManufacturing Cost`
-			""", as_dict=True)
-			for m in mcf_records:
-				code = (m.item_code or "").strip()
-				if code not in cost_lookup:
-					cost_lookup[code] = []
-				cost_lookup[code].append(m)
+	# Load Manufacturing Cost for COGS & Contribution Margin
+	mcf_table = "tabManufacturing Cost Fact" if frappe.db.table_exists("Manufacturing Cost Fact") else "tabManufacturing Cost"
+	mcf_records = frappe.db.sql(f"""
+		SELECT 
+			COALESCE(item_code, '') as item_code,
+			period_start_date,
+			period_end_date,
+			COALESCE(variable_cogs_per_piece, 0.0) as var_cogs
+		FROM `{mcf_table}`
+	""", as_dict=True)
+	for m in mcf_records:
+		code = (m.item_code or "").strip()
+		if code not in cost_lookup:
+			cost_lookup[code] = []
+		cost_lookup[code].append(m)
 
 	def get_unit_cogs(item_code, po_date):
 		if not po_date:
@@ -342,6 +354,8 @@ def get_data(filters, dynamic_columns, pivot_keys):
 		k_dm = f"{gsm_t} / {sm_t} / {dm_t}"
 		k_mr = f"{gsm_t} / {sm_t} / {dm_t} / {mr_t}"
 
+		sp_link = (s.custom_sales_person or "").strip()
+
 		for k, p, t, ind, is_grp, c, nm in [
 			(k_gsm, None, "GSM", 0, 1, gsm_t, f"{gsm_t} - {gsm_n}"),
 			(k_sm, k_gsm, "SM", 1, 1, sm_t, f"{sm_t} - {sm_n}"),
@@ -350,90 +364,171 @@ def get_data(filters, dynamic_columns, pivot_keys):
 		]:
 			if k not in nodes:
 				nodes[k] = {
-					"key": k, "parent": p, "tier": t, "indent": ind, "is_group": is_grp,
-					"code": c, "name": nm, "accumulated_sales": 0.0
+					"key": k,
+					"parent": p,
+					"tier": t,
+					"indent": ind,
+					"is_group": is_grp,
+					"code": c,
+					"name": nm,
+					"sp_links": set(),
+					"accumulated_sales": 0.0,
+					"accumulated_cogs": 0.0,
+					"var_sales_cost": 0.0,
 				}
 				for c_k in dyn_col_names:
 					nodes[k][c_k] = 0.0
+			if sp_link:
+				nodes[k]["sp_links"].add(sp_link)
 
 		# Determine column allocations & metric values
-		allocations = []  # list of (target_col_fieldname, metric_val)
+		allocations = []
+		order_items = item_map.get(s.name, [])
+		order_cogs = 0.0
 
-		if not need_items:
+		if not order_items:
 			target_col = None
-			if pivot_by == "Monthly (Jan-Dec)":
-				if po_date:
-					target_col = f"m_{po_date.year}_{po_date.month:02d}"
-			elif pivot_by == "Quarter":
-				if po_date:
-					q = (po_date.month - 1) // 3 + 1
-					target_col = f"q_{po_date.year}_q{q}"
+			if pivot_by == "Monthly (Jan-Dec)" and po_date:
+				target_col = f"m_{po_date.year}_{po_date.month:02d}"
+			elif pivot_by == "Quarter" and po_date:
+				q = (po_date.month - 1) // 3 + 1
+				target_col = f"q_{po_date.year}_q{q}"
+			elif pivot_by == "Item Group / Product":
+				target_col = "item_other"
+
 			if target_col and target_col in dyn_col_names:
 				allocations.append((target_col, header_nsv))
+
+			for k in (k_gsm, k_sm, k_dm, k_mr):
+				nodes[k]["accumulated_sales"] += header_nsv
 		else:
-			order_items = item_map.get(s.name, [])
-			if not order_items:
+			computed_items = []
+			order_gsv = 0.0
+			for it in order_items:
+				qty = flt(it.qty) or 1.0
+				hna = flt(it.unit_hna)
+				item_gsv = qty * hna if hna > 0 else (flt(it.amount) or header_gsv)
+				computed_items.append((it, qty, item_gsv))
+				order_gsv += item_gsv
+
+			for it, qty, item_gsv in computed_items:
+				if order_gsv > 0 and header_nsv > 0:
+					item_nsv = (item_gsv / order_gsv) * header_nsv
+				else:
+					item_nsv = item_gsv
+
+				u_cogs = get_unit_cogs(it.item_code, po_date)
+				order_cogs += (qty * u_cogs)
+
+				if val_field_choice == "GSV":
+					metric_val = item_gsv
+				elif val_field_choice == "Item Amount":
+					metric_val = flt(it.amount) or item_gsv
+				elif val_field_choice == "Contribution Margin":
+					metric_val = item_nsv - (qty * u_cogs)
+				else:
+					metric_val = item_nsv
+
 				target_col = None
-				if pivot_by == "Monthly (Jan-Dec)" and po_date:
-					target_col = f"m_{po_date.year}_{po_date.month:02d}"
-				elif pivot_by == "Quarter" and po_date:
-					q = (po_date.month - 1) // 3 + 1
-					target_col = f"q_{po_date.year}_q{q}"
-				elif pivot_by == "Item Group / Product":
-					target_col = "item_other"
+				if pivot_by == "Monthly (Jan-Dec)":
+					if po_date:
+						target_col = f"m_{po_date.year}_{po_date.month:02d}"
+				elif pivot_by == "Quarter":
+					if po_date:
+						q = (po_date.month - 1) // 3 + 1
+						target_col = f"q_{po_date.year}_q{q}"
+				else:
+					item_code = it.item_code
+					if item_code in known_items_map:
+						target_col = known_items_map[item_code]
+					elif "__ALL__" in dict(pivot_keys):
+						target_col = "item_all_products"
+					else:
+						target_col = "item_other"
+
 				if target_col and target_col in dyn_col_names:
-					allocations.append((target_col, header_nsv))
-			else:
-				computed_items = []
-				order_gsv = 0.0
-				for it in order_items:
-					qty = flt(it.qty) or 1.0
-					hna = flt(it.unit_hna)
-					item_gsv = qty * hna if hna > 0 else (flt(it.amount) or header_gsv)
-					computed_items.append((it, qty, item_gsv))
-					order_gsv += item_gsv
+					allocations.append((target_col, metric_val))
 
-				for it, qty, item_gsv in computed_items:
-					if order_gsv > 0 and header_nsv > 0:
-						item_nsv = (item_gsv / order_gsv) * header_nsv
-					else:
-						item_nsv = item_gsv
+			for k in (k_gsm, k_sm, k_dm, k_mr):
+				nodes[k]["accumulated_sales"] += header_nsv
+				nodes[k]["accumulated_cogs"] += order_cogs
 
-					if val_field_choice == "GSV":
-						metric_val = item_gsv
-					elif val_field_choice == "Item Amount":
-						metric_val = flt(it.amount) or item_gsv
-					elif val_field_choice == "Contribution Margin":
-						unit_cogs = get_unit_cogs(it.item_code, po_date)
-						metric_val = item_nsv - (qty * unit_cogs)
-					else:
-						metric_val = item_nsv
-
-					target_col = None
-					if pivot_by == "Monthly (Jan-Dec)":
-						if po_date:
-							target_col = f"m_{po_date.year}_{po_date.month:02d}"
-					elif pivot_by == "Quarter":
-						if po_date:
-							q = (po_date.month - 1) // 3 + 1
-							target_col = f"q_{po_date.year}_q{q}"
-					else:
-						item_code = it.item_code
-						if item_code in known_items_map:
-							target_col = known_items_map[item_code]
-						elif "__ALL__" in dict(pivot_keys):
-							target_col = "item_all_products"
-						else:
-							target_col = "item_other"
-
-					if target_col and target_col in dyn_col_names:
-						allocations.append((target_col, metric_val))
-
-		# Add allocations to all 4 hierarchy nodes
 		for target_col, val in allocations:
 			for k in (k_gsm, k_sm, k_dm, k_mr):
 				nodes[k][target_col] = nodes[k].get(target_col, 0.0) + val
-				nodes[k]["accumulated_sales"] += val
+
+	# Manufacturing Overhead & Regional Variable Sales for Accumulated CM
+	moh_condition = ""
+	moh_params = {"from_date": filters.get("from_date"), "to_date": filters.get("to_date")}
+	if filters.get("company"):
+		moh_condition = "AND company = %(company)s"
+		moh_params["company"] = filters.get("company")
+
+	moh_records = frappe.db.sql(f"""
+		SELECT COALESCE(SUM(total_variable_moh), 0.0) as total_var_moh
+		FROM `tabManufacturing Overhead`
+		WHERE period_date BETWEEN %(from_date)s AND %(to_date)s
+		  AND docstatus = 1
+		  {moh_condition}
+	""", moh_params, as_dict=True)
+	total_company_var_moh = flt(moh_records[0].total_var_moh) if moh_records else 0.0
+
+	soc_records = frappe.db.sql(f"""
+		SELECT territory, sales_person, COALESCE(total_variable_sales_cost, 0.0) as var_sales
+		FROM `tabSales Operational Cost`
+		WHERE period_date BETWEEN %(from_date)s AND %(to_date)s
+		  AND docstatus = 1
+		  {moh_condition}
+	""", moh_params, as_dict=True)
+
+	sp_tree_records = frappe.db.sql("SELECT name, lft, rgt FROM `tabSales Person`", as_dict=True)
+	sp_meta = {r.name: r for r in sp_tree_records}
+
+	for soc in soc_records:
+		sp_name = (soc.sales_person or "").strip()
+		terr = (soc.territory or "").strip()
+		var_cost = flt(soc.var_sales)
+
+		matched_keys = set()
+		if sp_name:
+			for k, n in nodes.items():
+				if sp_name in n["sp_links"] or sp_name == n["code"]:
+					matched_keys.add(k)
+
+		if terr and not matched_keys:
+			clean_terr = terr.upper()
+			for k, n in nodes.items():
+				if clean_terr == n["code"].upper() or clean_terr in n["name"].upper():
+					matched_keys.add(k)
+
+		if not matched_keys and sp_name in sp_meta:
+			target_sp = sp_meta[sp_name]
+			for k, n in nodes.items():
+				for lnk in n["sp_links"]:
+					if lnk in sp_meta:
+						lnk_sp = sp_meta[lnk]
+						if target_sp.lft <= lnk_sp.lft and target_sp.rgt >= lnk_sp.rgt:
+							matched_keys.add(k)
+
+		if matched_keys:
+			max_indent = max(nodes[k]["indent"] for k in matched_keys)
+			target_nodes = [k for k in matched_keys if nodes[k]["indent"] == max_indent]
+			split_factor = len(target_nodes)
+
+			for tk in target_nodes:
+				curr = tk
+				while curr:
+					nodes[curr]["var_sales_cost"] += (var_cost / split_factor)
+					curr = nodes[curr]["parent"]
+		else:
+			gsm_nodes = [k for k, v in nodes.items() if v["tier"] == "GSM"] or list(nodes.keys())
+			split_factor = len(gsm_nodes) if gsm_nodes else 1
+			for gk in gsm_nodes:
+				nodes[gk]["var_sales_cost"] += (var_cost / split_factor)
+
+	root_revenue = sum(v["accumulated_sales"] for v in nodes.values() if v["tier"] == "GSM")
+	if root_revenue <= 0.0:
+		root_revenue = max((v["accumulated_sales"] for v in nodes.values()), default=0.0)
 
 	# Sort hierarchically: GSM -> SM -> DM -> MR
 	sorted_keys = []
@@ -452,6 +547,15 @@ def get_data(filters, dynamic_columns, pivot_keys):
 		if target_tier != "All" and n["tier"] != target_tier:
 			continue
 
+		tot_sales = flt(n["accumulated_sales"])
+		tot_cogs = flt(n["accumulated_cogs"])
+		rev_share = (tot_sales / root_revenue) if root_revenue > 0 else 0.0
+		alloc_var_moh = flt(total_company_var_moh * rev_share)
+		var_sales = flt(n["var_sales_cost"])
+
+		# Accumulated CM = NSV - Direct COGS - Allocated Var MOH - Reg Var Sales
+		accum_cm = flt(tot_sales - (tot_cogs + alloc_var_moh + var_sales))
+
 		row = {
 			"sales_person": n["key"],
 			"sales_person_name": n["name"],
@@ -460,7 +564,8 @@ def get_data(filters, dynamic_columns, pivot_keys):
 			"indent": n["indent"] if target_tier == "All" else 0,
 			"is_group": n["is_group"],
 			"has_value": True,
-			"accumulated_sales": flt(n["accumulated_sales"], 2)
+			"accumulated_sales": flt(tot_sales, 2),
+			"accumulated_cm": flt(accum_cm, 2)
 		}
 		for c_k in dyn_col_names:
 			row[c_k] = flt(n.get(c_k, 0.0), 2)
@@ -507,6 +612,7 @@ def get_report_summary(data, columns, filters):
 		root_rows = data
 
 	total_accumulated = sum(flt(r.get("accumulated_sales", 0.0)) for r in root_rows)
+	total_accum_cm = sum(flt(r.get("accumulated_cm", 0.0)) for r in root_rows)
 	currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency") or "IDR"
 	metric_label = filters.get("value_field", "Sales")
 
@@ -517,128 +623,19 @@ def get_report_summary(data, columns, filters):
 			"datatype": "Currency",
 			"currency": currency,
 			"indicator": "Blue"
+		},
+		{
+			"value": total_accum_cm,
+			"label": _("Total Accumulated Contribution Margin"),
+			"datatype": "Currency",
+			"currency": currency,
+			"indicator": "Green" if total_accum_cm >= 0 else "Red"
 		}
 	]
 
 
 def get_pivot_insights_html(data, dynamic_columns, filters):
-	"""Generates narrative insights banner for Sales Person Pivot Tree Report."""
 	if not data:
 		return ""
-
-	root_rows = [r for r in data if r.get("indent") == 0]
-	if not root_rows:
-		root_rows = data
-
-	total_sales = sum(flt(r.get("accumulated_sales", 0.0)) for r in root_rows)
 	currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency") or "IDR"
-	metric_name = filters.get("value_field", "NSV")
-
-	def fmt_money(val):
-		v = flt(val)
-		if abs(v) >= 1_000_000_000:
-			return f"{v / 1_000_000_000:,.2f} B"
-		elif abs(v) >= 1_000_000:
-			return f"{v / 1_000_000:,.2f} M"
-		return f"{v:,.0f}"
-
-	# Find top performing node (SM or DM)
-	sm_nodes = [r for r in data if r.get("tier") in ("SM", "DM") and flt(r.get("accumulated_sales", 0)) > 0]
-	if not sm_nodes:
-		sm_nodes = [r for r in data if flt(r.get("accumulated_sales", 0)) > 0]
-	top_seller = max(sm_nodes, key=lambda x: flt(x.get("accumulated_sales", 0.0))) if sm_nodes else None
-
-	# Period breakdown & Peak period analysis
-	peak_period = None
-	peak_total = 0.0
-	period_totals = {}
-	if dynamic_columns:
-		for col in dynamic_columns:
-			col_key = col.get("fieldname")
-			col_tot = sum(flt(r.get(col_key, 0.0)) for r in root_rows)
-			period_totals[col["label"]] = col_tot
-			if col_tot > peak_total:
-				peak_total = col_tot
-				peak_period = col["label"]
-
-	# Trajectory direction: compare first and last period if available
-	trend_text = "Stable"
-	if len(dynamic_columns) >= 2:
-		first_col = dynamic_columns[0].get("fieldname")
-		last_col = dynamic_columns[-1].get("fieldname")
-		first_val = sum(flt(r.get(first_col, 0.0)) for r in root_rows)
-		last_val = sum(flt(r.get(last_col, 0.0)) for r in root_rows)
-		if first_val > 0:
-			growth = ((last_val - first_val) / first_val) * 100
-			if growth > 5:
-				trend_text = f"Expanding (+{growth:.1f}% vs first period)"
-			elif growth < -5:
-				trend_text = f"Contracting ({growth:.1f}% vs first period)"
-			else:
-				trend_text = f"Stable ({growth:+.1f}%)"
-
-	top_card_html = ""
-	if top_seller:
-		top_card_html = f"""
-		<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 240px;">
-			<div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #166534; letter-spacing: 0.5px; margin-bottom: 4px;">
-				🏆 Leading Contributor
-			</div>
-			<div style="font-size: 15px; font-weight: 700; color: #14532d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{top_seller.get('sales_person_name')}">
-				{top_seller.get('sales_person_name')} ({top_seller.get('tier')})
-			</div>
-			<div style="font-size: 12px; color: #15803d; margin-top: 4px;">
-				Accumulated: <strong>{currency} {fmt_money(top_seller.get('accumulated_sales'))}</strong>
-			</div>
-		</div>
-		"""
-
-	peak_card_html = ""
-	if peak_period:
-		peak_card_html = f"""
-		<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 240px;">
-			<div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #1e40af; letter-spacing: 0.5px; margin-bottom: 4px;">
-				📈 Peak Sales Window
-			</div>
-			<div style="font-size: 15px; font-weight: 700; color: #1e3a8a;">
-				{peak_period}
-			</div>
-			<div style="font-size: 12px; color: #2563eb; margin-top: 4px;">
-				Volume: <strong>{currency} {fmt_money(peak_total)}</strong>
-			</div>
-		</div>
-		"""
-
-	trend_card_html = f"""
-	<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 240px;">
-		<div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #475569; letter-spacing: 0.5px; margin-bottom: 4px;">
-			📊 Sales Trajectory Trend
-		</div>
-		<div style="font-size: 15px; font-weight: 700; color: #0f172a;">
-			{trend_text}
-		</div>
-		<div style="font-size: 12px; color: #64748b; margin-top: 4px;">
-			Aggregated Periods: <strong>{len(dynamic_columns)} {filters.get('pivot_by', 'intervals')}</strong>
-		</div>
-	</div>
-	"""
-
-	return f"""
-	<div class="frappe-insight-pivot-card" style="margin-bottom: 18px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-		<div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 14px;">
-			<div style="display: flex; align-items: center; gap: 8px;">
-				<span style="background: #0284c7; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">INSIGHTS</span>
-				<h5 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b;">QL Sales Velocity & Periodic Trajectory Insights</h5>
-			</div>
-			<div style="font-size: 12px; color: #64748b;">
-				Metric: <strong>{metric_name}</strong> &bull; Pivot: <strong>{filters.get('pivot_by')}</strong>
-			</div>
-		</div>
-
-		<div style="display: flex; gap: 12px; flex-wrap: wrap;">
-			{top_card_html}
-			{peak_card_html}
-			{trend_card_html}
-		</div>
-	</div>
-	"""
+	return ""

@@ -123,15 +123,23 @@ Located at: `/app/manufacturing-cost`
 - **Variable COGS per piece**: Standard variable manufacturing rate (materials + direct power).
 - **Statutory Valuation Rate**: Full absorbed inventory valuation rate under statutory GAAP.
 
-### 4.3 General Ledger Expense Categorization (`GL Entry`)
-Operational expenses recorded in standard ERPNext accounting are dynamically parsed and attributed based on account names and Cost Centers:
+### 4.3 Dedicated Cost Input DocTypes (Replacing `tabGL Entry`)
+Instead of querying `tabGL Entry`, all variable and fixed operating, employee, and factory costs are derived directly from two dedicated monthly input DocTypes:
 
-| Expense Group | Account Keywords Filter | Cost Allocation Method |
-| :--- | :--- | :--- |
-| **Variable OPEX** | `logistik`, `bbm`, `tol`, `parkir`, `ekspedisi`, `freight`, `delivery`, `shipping`, `transport`, `komisi`, `commission` | Directly assigned to matching territory Cost Center; unassigned amounts allocated to Shared Overhead |
-| **Fixed Operating** | `sewa gudang`, `rent`, `listrik`, `air`, `telepon`, `internet`, `utilities`, `pemeliharaan`, `maintenance`, `depresiasi` | Assigned to matching regional node Cost Center; unassigned amounts allocated to Shared Overhead |
-| **Employee Costs** | `gaji`, `salary`, `salaries`, `upah`, `tunjangan`, `benefit`, `bpjs`, `thr`, `payroll` | Assigned to employee/territory party or Cost Center |
-| **Corporate Overhead**| All remaining `Expense` accounts | Allocated proportionally across root sales nodes based on Net Sales Value (NSV) |
+#### 1. `Manufacturing Overhead` (`tabManufacturing Overhead`)
+- **Maintained by:** Manufacturing Department (`Manufacturing User` / `Manufacturing Manager`)
+- **Naming:** `MOH-YYYY-MM` (Snaps `period_date` to `01-MM-YYYY`, 1 record per company/month)
+- **Biaya Overhead Pabrik Variabel (Deducted for Contribution Margin):** Biaya Kerusakan Bahan Baku/Kemasan/Barang Jadi, Biaya Analisa, Jasa Pengujian, Biaya Pengolahan Limbah, Biaya Impor, Biaya Ekspedisi.
+- **Biaya Overhead Pabrik Tetap / Fixed MOH (Deducted for Net Profit):** Biaya Pegawai Tak Langsung, Keamanan, Rumah Tangga, Pabrik Lainnya, Penyusutan Bangunan/Mesin/Inventaris, ATK, Cetakan, Listrik & Air, Asuransi, Perjalanan Dinas, Entertainment, Training, Pemeliharaan & Perbaikan, Jasa Pemeliharaan, R&D, Sewa Tabung/Peralatan/Kendaraan.
+- **Allocation Method:** Allocated proportionally to each regional node based on revenue share:
+  $$\text{Node Revenue Share} = \frac{\text{Node Gross Revenue (NSV)}}{\text{Total Company Gross Revenue}}$$
+
+#### 2. `Sales Operational Cost` (`tabSales Operational Cost`)
+- **Maintained by:** Commercial & Marketing Team (`Marketing User` / `Marketing Manager` / `Sales Master Manager`)
+- **Naming:** `SOC-{territory}-{YYYY}-{MM}` (Snaps `period_date` to `01-MM-YYYY`, 1 record per period + territory + sales_person)
+- **Biaya Operasional & Penjualan Variabel (Deducted for Contribution Margin):** Biaya Komisi Penjualan, Biaya Pendistribusian Produk, Biaya Ekspedisi.
+- **Biaya Karyawan & Operasional Tetap (Deducted for Net Profit):** Biaya Gaji, Rumah Tangga, Perjalanan Dinas, Entertainment, ATK, Cetakan, Listrik & Air, Pemeliharaan Kendaraan, Jasa Pemeliharaan Kendaraan, Telepon & Internet, Penyusutan Kendaraan, Penyusutan Inventaris Kantor.
+- **Rollup Method:** Direct assignment to matching territory / sales person node with hierarchical rollup to supervisory managers (MR $\rightarrow$ DM $\rightarrow$ SM $\rightarrow$ GSM).
 
 ---
 

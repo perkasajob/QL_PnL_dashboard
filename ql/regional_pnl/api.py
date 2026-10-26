@@ -20,7 +20,7 @@ def get_total_nsv(from_date=None, to_date=None, company=None):
 
 @frappe.whitelist()
 def get_total_contribution_margin(from_date=None, to_date=None, company=None):
-	"""Returns the Total Contribution Margin and CM %."""
+	"""Returns the Total Contribution Margin."""
 	res = get_summary_metrics(from_date, to_date, company)
 	return {
 		"value": res.get("total_cm", 0.0),
@@ -40,10 +40,30 @@ def get_contribution_margin_pct(from_date=None, to_date=None, company=None):
 
 @frappe.whitelist()
 def get_total_direct_cogs(from_date=None, to_date=None, company=None):
-	"""Returns the Total Direct COGS."""
+	"""Returns the Total Direct Variable COGS."""
 	res = get_summary_metrics(from_date, to_date, company)
 	return {
 		"value": res.get("total_cogs", 0.0),
+		"fieldtype": "Currency"
+	}
+
+
+@frappe.whitelist()
+def get_total_manufacturing_overhead(from_date=None, to_date=None, company=None):
+	"""Returns the Total Manufacturing Overhead (Variable + Fixed)."""
+	res = get_summary_metrics(from_date, to_date, company)
+	return {
+		"value": res.get("total_moh", 0.0),
+		"fieldtype": "Currency"
+	}
+
+
+@frappe.whitelist()
+def get_total_sales_operational_cost(from_date=None, to_date=None, company=None):
+	"""Returns the Total Regional Sales Cost (Variable + Salaries + Fixed OPEX)."""
+	res = get_summary_metrics(from_date, to_date, company)
+	return {
+		"value": res.get("total_soc", 0.0),
 		"fieldtype": "Currency"
 	}
 
@@ -67,7 +87,7 @@ def get_summary_metrics(from_date=None, to_date=None, company=None):
 		"cost_basis": "Variable Costing (Contribution)"
 	}
 	_, data, _, _, _ = run_regional_pnl(filters)
-	
+
 	root_rows = [r for r in data if r.get("indent") == 0]
 	if not root_rows:
 		root_rows = data
@@ -76,6 +96,8 @@ def get_summary_metrics(from_date=None, to_date=None, company=None):
 	tot_cogs = sum(r.get("direct_cogs", 0.0) for r in root_rows)
 	tot_cm = sum(r.get("contribution_margin", 0.0) for r in root_rows)
 	tot_profit = sum(r.get("net_profit", 0.0) for r in root_rows)
+	tot_moh = sum(flt(r.get("allocated_variable_moh", 0.0) + r.get("allocated_fixed_moh", 0.0)) for r in root_rows)
+	tot_soc = sum(flt(r.get("regional_variable_sales_cost", 0.0) + r.get("regional_employee_salaries", 0.0) + r.get("regional_fixed_operating_costs", 0.0)) for r in root_rows)
 	cm_pct = flt((tot_cm / tot_nsv * 100) if tot_nsv > 0 else 0.0, 2)
 
 	return {
@@ -83,6 +105,8 @@ def get_summary_metrics(from_date=None, to_date=None, company=None):
 		"total_cogs": flt(tot_cogs, 2),
 		"total_cm": flt(tot_cm, 2),
 		"cm_pct": cm_pct,
+		"total_moh": flt(tot_moh, 2),
+		"total_soc": flt(tot_soc, 2),
 		"total_net_profit": flt(tot_profit, 2)
 	}
 
@@ -123,7 +147,6 @@ def get_product_margin_breakdown_chart(from_date=None, to_date=None):
 	hna_col = "custom_hna" if "custom_hna" in existing_cols else None
 	hna_select = f", COALESCE({hna_col}, 0.0) as unit_hna" if hna_col else ", 0.0 as unit_hna"
 
-	# 1. Fetch Sales Headers
 	sales_headers = frappe.db.sql("""
 		SELECT 
 			name,
@@ -138,7 +161,6 @@ def get_product_margin_breakdown_chart(from_date=None, to_date=None):
 	if not sales_headers:
 		return {"labels": [], "datasets": []}
 
-	# 2. Fetch Sales Items in batches
 	all_names = [h.name for h in sales_headers]
 	items_by_parent = {}
 	chunk_size = 1000
@@ -160,20 +182,19 @@ def get_product_margin_breakdown_chart(from_date=None, to_date=None):
 				items_by_parent[it.parent] = []
 			items_by_parent[it.parent].append(it)
 
-	# 3. Load Manufacturing Costs
-	cost_rows = frappe.db.sql("""
+	mcf_table = "tabManufacturing Cost Fact" if frappe.db.table_exists("Manufacturing Cost Fact") else "tabManufacturing Cost"
+	cost_rows = frappe.db.sql(f"""
 		SELECT 
-			product_id,
-			item_code,
+			COALESCE(item_code, '') as item_code,
 			period_start_date,
 			period_end_date,
 			COALESCE(variable_cogs_per_piece, 0.0) as unit_cost
-		FROM `tabManufacturing Cost`
+		FROM `{mcf_table}`
 	""", as_dict=True)
 
 	cost_list = []
 	for c in cost_rows:
-		keys = {str(c.product_id).strip(), str(c.item_code).strip()} - {"None", ""}
+		keys = {str(c.item_code).strip()} - {"None", ""}
 		cost_list.append({
 			"keys": keys,
 			"start": c.period_start_date,
@@ -191,7 +212,6 @@ def get_product_margin_breakdown_chart(from_date=None, to_date=None):
 					return c["cost"]
 		return 0.0
 
-	# 4. Group by Product
 	item_agg = {}
 	for h in sales_headers:
 		h_items = items_by_parent.get(h.name, [])
@@ -250,7 +270,7 @@ def get_cost_stack_chart(from_date=None, to_date=None, company=None):
 	"""
 	Stacked Bar / Waterfall:
 	X-Axis = SM Node;
-	Stacked Y-Series = Direct COGS, Variable OPEX, Fixed Operating + Employee Costs, Overhead Costs, Net Profit.
+	Stacked Y-Series = COGS, Operating Costs, Employee Costs, Manufacturing Overhead, Net Profit.
 	"""
 	filters = {
 		"from_date": from_date or add_months(nowdate(), -1),
@@ -264,18 +284,18 @@ def get_cost_stack_chart(from_date=None, to_date=None, company=None):
 
 	labels = [r.get("sales_person_name") for r in sm_rows]
 	cogs_vals = [r.get("direct_cogs", 0.0) for r in sm_rows]
-	var_opex_vals = [r.get("variable_opex", 0.0) for r in sm_rows]
-	fixed_vals = [flt(r.get("fixed_operating_costs", 0.0) + r.get("employee_costs", 0.0), 2) for r in sm_rows]
-	overhead_vals = [r.get("overhead_costs", 0.0) for r in sm_rows]
+	moh_vals = [flt(r.get("allocated_variable_moh", 0.0) + r.get("allocated_fixed_moh", 0.0), 2) for r in sm_rows]
+	op_costs_vals = [r.get("regional_fixed_operating_costs", 0.0) for r in sm_rows]
+	emp_vals = [r.get("regional_employee_salaries", 0.0) for r in sm_rows]
 	profit_vals = [r.get("net_profit", 0.0) for r in sm_rows]
 
 	return {
 		"labels": labels,
 		"datasets": [
-			{"name": "Direct COGS", "values": cogs_vals},
-			{"name": "Variable OPEX", "values": var_opex_vals},
-			{"name": "Fixed Operating & Employee", "values": fixed_vals},
-			{"name": "Overhead Costs", "values": overhead_vals},
+			{"name": "COGS", "values": cogs_vals},
+			{"name": "Manufacturing Overhead", "values": moh_vals},
+			{"name": "Operating Costs", "values": op_costs_vals},
+			{"name": "Employee Costs", "values": emp_vals},
 			{"name": "Net Profit", "values": profit_vals}
 		]
 	}
@@ -295,4 +315,3 @@ def get_hierarchical_sales_trajectory_chart(from_date=None, to_date=None):
 	if chart and chart.get("data"):
 		return chart["data"]
 	return {"labels": [], "datasets": []}
-
