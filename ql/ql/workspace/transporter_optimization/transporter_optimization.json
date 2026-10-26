@@ -1,0 +1,147 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"Header1\",\"type\":\"header\",\"data\":{\"text\":\"Transporter Optimization & Fleet Allocation\",\"col\":12}},{\"id\":\"CardTrans\",\"type\":\"card\",\"data\":{\"card_name\":\"Calculators & Optimization\",\"col\":6}},{\"id\":\"CardMaster\",\"type\":\"card\",\"data\":{\"card_name\":\"Master Data\",\"col\":6}}]",
+ "creation": "2026-10-09 09:30:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "truck",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Transporter Optimization",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Calculators & Optimization",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Primary Distribution",
+   "link_count": 0,
+   "link_to": "Primary Distribution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Secondary Distribution",
+   "link_count": 0,
+   "link_to": "Secondary Distribution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transport Calculator",
+   "link_count": 0,
+   "link_to": "Transport Calculator",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Master Data",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transport Mode",
+   "link_count": 0,
+   "link_to": "Transport Mode",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "City Fleet Mode",
+   "link_count": 0,
+   "link_to": "City Fleet Mode",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Expedition Tariff",
+   "link_count": 0,
+   "link_to": "Expedition Tariff",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transport Destination",
+   "link_count": 0,
+   "link_to": "Transport Destination",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-10-12 11:25:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Transporter Optimization",
+ "number_cards": [],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "format": "",
+   "label": "Primary Distribution",
+   "link_to": "Primary Distribution",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "format": "",
+   "label": "Secondary Distribution",
+   "link_to": "Secondary Distribution",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "format": "",
+   "label": "Transport Calculator",
+   "link_to": "Transport Calculator",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "format": "",
+   "label": "Expedition Tariff",
+   "link_to": "Expedition Tariff",
+   "type": "DocType"
+  }
+ ],
+ "title": "Transporter Optimization"
+}

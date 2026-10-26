@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-10-09 09:30:00.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "vendor",
+  "fleet_mix",
+  "intercity_total_cost",
+  "intercity_cost_per_unit",
+  "remaining_package_capacity",
+  "total_capacity",
+  "is_recommended"
+ ],
+ "fields": [
+  {
+   "fieldname": "vendor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vendor",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fleet_mix",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Fleet Mix",
+   "reqd": 1
+  },
+  {
+   "fieldname": "intercity_total_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Intercity Total Cost",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "intercity_cost_per_unit",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Intercity Cost Per Unit",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "remaining_package_capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Remaining Package Capacity",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "total_capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Fleet Capacity",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_recommended",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Recommended"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-09 09:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Logistics Optimization Item",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "intercity_total_cost",
+ "sort_order": "ASC",
+ "states": []
+}

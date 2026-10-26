@@ -1,0 +1,248 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:{destination}-{outlet}",
+ "creation": "2026-10-12 11:22:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_primary",
+  "primary_distribution",
+  "destination",
+  "distributor_warehouse",
+  "column_break_primary",
+  "intercity_cost",
+  "intercity_vendor",
+  "intercity_fleet_mix",
+  "section_break_secondary",
+  "outlet",
+  "outlet_address",
+  "distance_km",
+  "column_break_secondary",
+  "package_count",
+  "unit_count_in_package",
+  "status",
+  "calculate_within_city_optimization",
+  "section_break_cost",
+  "handling_and_labor_cost",
+  "within_city_transport_cost",
+  "within_city_fleet_mix",
+  "column_break_cost",
+  "total_cost",
+  "total_cost_per_unit",
+  "section_break_results",
+  "within_city_optimization_results"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_primary",
+   "fieldtype": "Section Break",
+   "label": "Primary Distribution (Intercity Leg)"
+  },
+  {
+   "fieldname": "primary_distribution",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Primary Distribution",
+   "options": "Primary Distribution",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "primary_distribution.destination",
+   "fieldname": "destination",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Destination",
+   "read_only": 1
+  },
+  {
+   "fieldname": "distributor_warehouse",
+   "fieldtype": "Data",
+   "label": "Distributor Warehouse",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_primary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "primary_distribution.best_total_cost",
+   "fieldname": "intercity_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Intercity Cost (Primary Distribution)",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "primary_distribution.best_vendor",
+   "fieldname": "intercity_vendor",
+   "fieldtype": "Link",
+   "label": "Primary Transporter Vendor",
+   "options": "Supplier",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "primary_distribution.best_fleet_mix",
+   "fieldname": "intercity_fleet_mix",
+   "fieldtype": "Small Text",
+   "label": "Primary Fleet Mix",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_secondary",
+   "fieldtype": "Section Break",
+   "label": "Secondary Distribution (Within the City Leg)"
+  },
+  {
+   "description": "Destination outlet / delivery point (e.g. Apotek Kimia Farma 12, RSUD, Clinic)",
+   "fieldname": "outlet",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Outlet",
+   "reqd": 1
+  },
+  {
+   "fieldname": "outlet_address",
+   "fieldtype": "Small Text",
+   "label": "Outlet Address"
+  },
+  {
+   "default": "15",
+   "description": "Distance from distributor warehouse to outlet in km",
+   "fieldname": "distance_km",
+   "fieldtype": "Float",
+   "label": "Distance (km)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_secondary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "primary_distribution.package_count",
+   "fieldname": "package_count",
+   "fieldtype": "Int",
+   "label": "Package Count (Colli)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "20",
+   "fetch_from": "primary_distribution.unit_count_in_package",
+   "fieldname": "unit_count_in_package",
+   "fieldtype": "Int",
+   "label": "Unit Count in Package",
+   "non_negative": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nCalculated\nCompleted"
+  },
+  {
+   "fieldname": "calculate_within_city_optimization",
+   "fieldtype": "Button",
+   "label": "Calculate Within-City Optimization"
+  },
+  {
+   "fieldname": "section_break_cost",
+   "fieldtype": "Section Break",
+   "label": "Cost Breakdown & Total Cost"
+  },
+  {
+   "description": "Loading, unloading, sorting and handling cost",
+   "fieldname": "handling_and_labor_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Handling & Labor Cost"
+  },
+  {
+   "description": "Optimized within the city transport cost from distributor warehouse to outlet",
+   "fieldname": "within_city_transport_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Within the City Transport Cost"
+  },
+  {
+   "fieldname": "within_city_fleet_mix",
+   "fieldtype": "Small Text",
+   "label": "Recommended Fleet Mix (Within City)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_cost",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Intercity + Handling & Labor + Within the City Transport",
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Cost",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_cost_per_unit",
+   "fieldtype": "Currency",
+   "label": "Total Cost Per Unit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_results",
+   "fieldtype": "Section Break",
+   "label": "Within-City Fleet Optimization Options"
+  },
+  {
+   "fieldname": "within_city_optimization_results",
+   "fieldtype": "Table",
+   "label": "Optimization Results",
+   "options": "Secondary Distribution Item"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-12 11:32:19.027503",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Secondary Distribution",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "destination,outlet,primary_distribution",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "outlet"
+}

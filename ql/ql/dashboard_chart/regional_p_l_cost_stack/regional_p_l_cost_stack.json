@@ -1,0 +1,21 @@
+{
+ "chart_name": "Regional P&L Cost Stack",
+ "chart_type": "Custom",
+ "color": "#ec4899",
+ "creation": "2026-10-22 13:00:00.000000",
+ "custom_options": "{\"barOptions\": {\"stacked\": true}, \"colors\": [\"#ef4444\", \"#f97316\", \"#eab308\", \"#64748b\", \"#10b981\"]}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-10-22 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Regional P&L Cost Stack",
+ "owner": "Administrator",
+ "source": "ql.regional_pnl.api.get_cost_stack_chart",
+ "timeseries": 0,
+ "type": "Bar",
+ "use_report_chart": 0
+}

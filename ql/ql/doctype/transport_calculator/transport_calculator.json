@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "creation": "2026-10-09 09:30:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_input",
+  "destination",
+  "package_count",
+  "column_break_input",
+  "unit_count_in_package",
+  "calculate_optimization",
+  "section_break_summary",
+  "best_vendor",
+  "best_fleet_mix",
+  "column_break_summary",
+  "best_total_cost",
+  "best_cost_per_unit",
+  "section_break_results",
+  "results"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_input",
+   "fieldtype": "Section Break",
+   "label": "Input Parameters"
+  },
+  {
+   "fieldname": "destination",
+   "fieldtype": "Link",
+   "label": "Destination",
+   "options": "Territory",
+   "reqd": 1
+  },
+  {
+   "fieldname": "package_count",
+   "fieldtype": "Int",
+   "label": "Package Count (Colli)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_input",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Number of product units inside each package (Colli)",
+   "fieldname": "unit_count_in_package",
+   "fieldtype": "Int",
+   "label": "Unit Count in Package",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "calculate_optimization",
+   "fieldtype": "Button",
+   "label": "Calculate Optimization"
+  },
+  {
+   "fieldname": "section_break_summary",
+   "fieldtype": "Section Break",
+   "label": "Recommended Allocation"
+  },
+  {
+   "fieldname": "best_vendor",
+   "fieldtype": "Link",
+   "label": "Recommended Vendor",
+   "options": "Supplier",
+   "read_only": 1
+  },
+  {
+   "fieldname": "best_fleet_mix",
+   "fieldtype": "Small Text",
+   "label": "Recommended Fleet Mix",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_summary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "best_total_cost",
+   "fieldtype": "Currency",
+   "label": "Best Total Cost",
+   "read_only": 1
+  },
+  {
+   "fieldname": "best_cost_per_unit",
+   "fieldtype": "Currency",
+   "label": "Best Cost Per Unit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_results",
+   "fieldtype": "Section Break",
+   "label": "Vendor Fleet Optimization Results"
+  },
+  {
+   "fieldname": "results",
+   "fieldtype": "Table",
+   "label": "Optimization Results",
+   "options": "Logistics Optimization Item"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-09 09:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Transport Calculator",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

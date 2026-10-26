@@ -1,0 +1,89 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:destination_name",
+ "creation": "2026-10-09 09:30:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "destination_name",
+  "distributor",
+  "city",
+  "territory",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "destination_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Destination Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "APL",
+   "fieldname": "distributor",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Distributor"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "City"
+  },
+  {
+   "fieldname": "territory",
+   "fieldtype": "Link",
+   "label": "Territory",
+   "options": "Territory"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-10 13:31:08.307162",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Transport Destination",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "destination_name",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "destination_name"
+}

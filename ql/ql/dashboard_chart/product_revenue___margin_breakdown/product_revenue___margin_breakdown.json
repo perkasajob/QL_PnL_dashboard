@@ -1,0 +1,21 @@
+{
+ "chart_name": "Product Revenue & Margin Breakdown",
+ "chart_type": "Custom",
+ "color": "#8b5cf6",
+ "creation": "2026-10-22 13:00:00.000000",
+ "custom_options": "{\"colors\": [\"#3b82f6\", \"#10b981\"], \"axisOptions\": {\"xIsSeries\": true}}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-10-22 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Product Revenue & Margin Breakdown",
+ "owner": "Administrator",
+ "source": "ql.regional_pnl.api.get_product_margin_breakdown_chart",
+ "timeseries": 0,
+ "type": "Bar",
+ "use_report_chart": 0
+}

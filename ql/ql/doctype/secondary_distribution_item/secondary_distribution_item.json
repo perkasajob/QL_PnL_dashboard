@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-10-12 11:20:00.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "vehicle_mode",
+  "fleet_mix",
+  "cost",
+  "cost_per_unit",
+  "capacity",
+  "remaining_capacity",
+  "is_recommended"
+ ],
+ "fields": [
+  {
+   "fieldname": "vehicle_mode",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Vehicle Option",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fleet_mix",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Fleet Mix",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Within-City Transport Cost",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "cost_per_unit",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Cost Per Unit",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Capacity",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "remaining_capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Remaining Capacity",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_recommended",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Recommended"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-12 11:20:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Secondary Distribution Item",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "cost",
+ "sort_order": "ASC",
+ "states": []
+}

@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "format:{item_code}-{period_start_date}",
+ "creation": "2026-10-21 16:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "product_id",
+  "apl_item_code",
+  "column_break_1",
+  "period_start_date",
+  "period_end_date",
+  "section_break_cost",
+  "statutory_valuation_rate",
+  "column_break_cost",
+  "variable_cogs_per_piece"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item Name"
+  },
+  {
+   "fieldname": "product_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Product ID"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "period_start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Period Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period_end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Period End Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_cost",
+   "fieldtype": "Section Break",
+   "label": "Cost Information"
+  },
+  {
+   "fieldname": "statutory_valuation_rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Statutory Valuation Rate"
+  },
+  {
+   "fieldname": "column_break_cost",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "variable_cogs_per_piece",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Variable COGS Per Piece"
+  },
+  {
+   "fieldname": "apl_item_code",
+   "fieldtype": "Data",
+   "label": "APL Item Code"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-22 10:26:02.668295",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Manufacturing Cost",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "search_fields": "item_code,item_name,product_id",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "item_name",
+ "track_changes": 1
+}

@@ -1,0 +1,21 @@
+{
+ "chart_name": "Sales Performance by Geography (SM Node)",
+ "chart_type": "Custom",
+ "color": "#2563eb",
+ "creation": "2026-10-22 13:00:00.000000",
+ "custom_options": "{\"colors\": [\"#2563eb\", \"#10b981\"], \"axisOptions\": {\"xIsSeries\": true}}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-10-22 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Sales Performance by Geography (SM Node)",
+ "owner": "Administrator",
+ "source": "ql.regional_pnl.api.get_sm_performance_chart",
+ "timeseries": 0,
+ "type": "Bar",
+ "use_report_chart": 0
+}

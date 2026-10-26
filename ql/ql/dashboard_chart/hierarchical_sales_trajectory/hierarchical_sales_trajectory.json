@@ -1,0 +1,21 @@
+{
+ "chart_name": "Hierarchical Sales Trajectory",
+ "chart_type": "Report",
+ "color": "#06b6d4",
+ "creation": "2026-10-22 13:00:00.000000",
+ "custom_options": "{\"lineOptions\": {\"regionFill\": 1}}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-10-22 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "QL",
+ "name": "Hierarchical Sales Trajectory",
+ "owner": "Administrator",
+ "report_name": "Sales Person Pivot Tree Report",
+ "timeseries": 1,
+ "type": "Line",
+ "use_report_chart": 1
+}
